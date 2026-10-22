@@ -1,6 +1,5 @@
 import { Component, signal, computed, OnInit, inject, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -36,6 +35,7 @@ interface ShopItem {
 import { DEFAULT_SHOP_IDS, ALLOWED_STORE_CONFIG } from '../../shared/constants';
 
 import { DealsStateService } from '../../services/deals-state';
+import { ItadApiService } from '../../services/itad-api';
 
 @Component({
   selector: 'app-deals',
@@ -46,7 +46,7 @@ import { DealsStateService } from '../../services/deals-state';
   styleUrl: './deals.css'
 })
 export class Deals implements OnInit {
-  private http = inject(HttpClient);
+  private itadApi = inject(ItadApiService);
   public timeService = inject(TimeService);
   public storage = inject(StorageService);
   private messageService = inject(MessageService);
@@ -116,7 +116,7 @@ export class Deals implements OnInit {
 
   loadShops() {
     this.loadingShops.set(true);
-    this.http.get<any[]>('/api/proxy/itad/shops?country=BR').subscribe({
+    this.itadApi.getShops('BR').subscribe({
       next: (data) => {
         const rawShops = Array.isArray(data) ? data : [];
         this.allApiShops.set(rawShops);
@@ -165,8 +165,7 @@ export class Deals implements OnInit {
     }
 
     const startIndex = append ? this.deals().length : 0;
-    const shopsParam = shops.join(',');
-    this.http.get<any>(`/api/proxy/itad/deals?country=BR&offset=${this.offset()}&limit=${this.limit}&shops=${shopsParam}&sort=rank`).subscribe({
+    this.itadApi.getDeals('BR', this.offset(), this.limit, shops, 'rank').subscribe({
       next: (data) => {
         const rawList = Array.isArray(data?.list) ? data.list : (Array.isArray(data) ? data : []);
         const newDeals: Deal[] = rawList.map((item: any) => ({

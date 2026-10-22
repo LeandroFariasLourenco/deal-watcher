@@ -32,13 +32,13 @@ class IndexedDBCache implements CacheInterface {
 
   constructor() {
     if (typeof window !== 'undefined' && 'indexedDB' in window) {
-      this.init();
+      this.dbPromise = this.open();
     }
   }
 
-  private async init() {
+  private async open() {
     const { openDB } = await import('idb');
-    this.dbPromise = openDB(DB_NAME, DB_VERSION, {
+    return openDB(DB_NAME, DB_VERSION, {
       upgrade(db) {
         Object.values(COLLECTIONS).forEach(storeName => {
           if (!db.objectStoreNames.contains(storeName)) {

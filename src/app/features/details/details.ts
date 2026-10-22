@@ -1,6 +1,6 @@
 import { Component, signal, computed, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { ItadApiService } from '../../services/itad-api';
 import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -43,7 +43,7 @@ import { NavigationService } from '../../services/navigation';
   styleUrl: './details.css'
 })
 export class Details implements OnInit {
-  private http = inject(HttpClient);
+  private itadApi = inject(ItadApiService);
   private route = inject(ActivatedRoute);
   private messageService = inject(MessageService);
   private storage = inject(StorageService);
@@ -196,8 +196,7 @@ export class Details implements OnInit {
   loadDetails(uuid: string) {
     this.loading.set(true);
     this.error.set(null);
-    const shopsParam = DEFAULT_SHOP_IDS.join(',');
-    this.http.get<any>(`/api/proxy/itad/details/${uuid}?country=BR&shops=${shopsParam}`).subscribe({
+    this.itadApi.getGameDetails(uuid, 'BR', DEFAULT_SHOP_IDS).subscribe({
       next: (data) => {
         if (!data || data.error) {
           this.error.set(data?.error || 'Erro ao carregar detalhes');
@@ -220,8 +219,7 @@ export class Details implements OnInit {
 
   loadHistory(uuid: string) {
     this.loadingHistory.set(true);
-    const shopsParam = DEFAULT_SHOP_IDS.join(',');
-    this.http.get<any[]>(`/api/proxy/itad/history/${uuid}?country=BR&shops=${shopsParam}`).subscribe({
+    this.itadApi.getHistory(uuid, 'BR', DEFAULT_SHOP_IDS).subscribe({
       next: (data) => {
         const list = Array.isArray(data) ? data : [];
         this.history.set(list);

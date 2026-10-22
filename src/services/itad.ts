@@ -12,10 +12,11 @@ export class ITADService {
   private get client() {
     return axios.create({
       baseURL: ITAD_BASE_URL,
+      params: {
+        key: 'f5f27e16501a779ab814878df837a45ea28a1da2'
+      },
       headers: {
-        'ITAD-API-Key': 'f5f27e16501a779ab814878df837a45ea28a1da2',
-        'User-Agent': 'DealWatcher/1.0',
-        'Accept': 'application/json',
+        Accept: 'application/json'
       }
     });
   }

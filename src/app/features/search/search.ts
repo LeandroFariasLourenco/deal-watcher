@@ -1,6 +1,5 @@
 import { Component, signal, inject, ElementRef, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
@@ -13,6 +12,7 @@ import { ToastModule } from 'primeng/toast';
 import { SearchStateService } from '../../services/search-state';
 import { TimeService } from '../../services/time';
 import { DEFAULT_SHOP_IDS } from '../../shared/constants';
+import { ItadApiService } from '../../services/itad-api';
 import { animate, stagger } from 'motion';
 
 @Component({
@@ -33,7 +33,7 @@ import { animate, stagger } from 'motion';
   styleUrl: './search.css'
 })
 export class Search implements OnInit {
-  private http = inject(HttpClient);
+  private itadApi = inject(ItadApiService);
   public storage = inject(StorageService);
   private messageService = inject(MessageService);
   private searchState = inject(SearchStateService);
@@ -78,9 +78,7 @@ export class Search implements OnInit {
     }
 
     this.loadingTrending.set(true);
-    const shopsParam = DEFAULT_SHOP_IDS.join(',');
-    // Deals endpoint with limit 10 and sort=steam-players
-    this.http.get<any>(`/api/proxy/itad/deals?country=BR&offset=0&limit=10&shops=${shopsParam}&sort=steam-players`).subscribe({
+    this.itadApi.getDeals('BR', 0, 10, DEFAULT_SHOP_IDS, 'steam-players').subscribe({
       next: (data) => {
         const rawList = Array.isArray(data?.list) ? data.list : (Array.isArray(data) ? data : []);
         const items = rawList.slice(0, 10).map((item: any) => ({
@@ -126,7 +124,7 @@ export class Search implements OnInit {
     const query = this.searchControl.value;
     if (!query) return;
     this.loading.set(true);
-    this.http.get<any[]>(`/api/proxy/itad/search?q=${query}`).subscribe({
+    this.itadApi.searchGames(query).subscribe({
       next: (data) => {
         const list = Array.isArray(data) ? data : [];
         this.results.set(list);

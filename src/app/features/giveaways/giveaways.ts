@@ -1,6 +1,6 @@
 import { Component, signal, OnInit, inject, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { ItadApiService } from '../../services/itad-api';
 import { RouterLink } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -28,7 +28,7 @@ interface Giveaway {
   styleUrl: './giveaways.css'
 })
 export class Giveaways implements OnInit {
-  private http = inject(HttpClient);
+  private itadApi = inject(ItadApiService);
   private el = inject(ElementRef);
   
   giveaways = signal<Giveaway[]>([]);
@@ -91,7 +91,7 @@ export class Giveaways implements OnInit {
     }
     this.error.set(null);
     const startIndex = append ? this.giveaways().length : 0;
-    this.http.get<any>(`/api/proxy/itad/giveaways?offset=${this.offset()}&limit=${this.limit}&sort=-rank`).subscribe({
+    this.itadApi.getGiveaways(this.offset(), this.limit).subscribe({
       next: (data) => {
         const rawList = Array.isArray(data) ? data : (Array.isArray(data?.list) ? data.list : []);
         const newGiveaways: Giveaway[] = rawList.map((item: any) => ({
