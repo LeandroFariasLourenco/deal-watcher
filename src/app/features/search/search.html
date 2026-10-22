@@ -77,12 +77,12 @@
                 <button 
                   type="button"
                   (click)="addToWatchlist(game, $event)"
-                  [class.text-red-400]="storage.isMonitored(game.id)"
-                  [class.bg-red-400/15]="storage.isMonitored(game.id)"
+                  [class.text-red-400]="waitlist.isMonitored(game.id)"
+                  [class.bg-red-400/15]="waitlist.isMonitored(game.id)"
                   class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-white/30 hover:text-red-400 transition-all border-none cursor-pointer"
-                  [attr.title]="storage.isMonitored(game.id) ? 'Na lista de desejos' : 'Salvar na lista'"
+                  [attr.title]="waitlist.isMonitored(game.id) ? 'Na waitlist do ITAD' : 'Adicionar à waitlist'"
                 >
-                  <mat-icon class="!text-base">{{ storage.isMonitored(game.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
+                  <mat-icon class="!text-base">{{ waitlist.isMonitored(game.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
                 </button>
                 <mat-icon class="text-white/10">chevron_right</mat-icon>
               </div>
@@ -185,23 +185,19 @@
                   </div>
                 </div>
 
-                <div class="shrink-0 flex items-center gap-1.5 sm:gap-2 mr-1 sm:mr-3">
+                <div class="flex items-center gap-1.5 sm:gap-2 ml-1 sm:ml-2 shrink-0">
                   <button 
                     type="button"
                     (click)="addToWatchlist(deal, $event)"
-                    [class.text-red-400]="storage.isMonitored(deal.id)"
-                    [class.bg-red-400/15]="storage.isMonitored(deal.id)"
-                    class="flex items-center justify-center w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-red-400 transition-all border-none cursor-pointer"
-                    [attr.title]="storage.isMonitored(deal.id) ? 'Na lista de desejos' : 'Salvar na lista'"
+                    class="watchlist-btn"
+                    [class.is-saved]="waitlist.isMonitored(deal.id)"
+                    [attr.title]="waitlist.isMonitored(deal.id) ? 'Na waitlist do ITAD' : 'Adicionar à waitlist'"
                   >
-                    <mat-icon class="!text-sm">{{ storage.isMonitored(deal.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
+                    <mat-icon>{{ waitlist.isMonitored(deal.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
                   </button>
-                </div>
-
-                <div class="flex items-center gap-1.5 sm:gap-2 ml-1 sm:ml-2 shrink-0">
                   @if (deal.cut > 0) {
-                    <div class="bg-[#4c6b22] h-7 sm:h-8 px-2 rounded flex items-center justify-center shrink-0">
-                      <span class="text-[#beee11] text-sm font-bold tabular-nums leading-none tracking-tight flex items-center justify-center">-{{ deal.cut }}%</span>
+                    <div class="deal-cut">
+                      <span class="text-[#beee11] text-sm font-bold tabular-nums leading-none tracking-tight">-{{ deal.cut }}%</span>
                     </div>
                   }
                   

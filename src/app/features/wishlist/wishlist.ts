@@ -4,7 +4,8 @@ import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MatIconModule } from '@angular/material/icon';
-import { StorageService } from '../../services/storage';
+import { WaitlistService } from '../../services/waitlist';
+import { ItadAuthService } from '../../services/itad-auth';
 
 @Component({
   selector: 'app-wishlist',
@@ -14,23 +15,32 @@ import { StorageService } from '../../services/storage';
   styleUrl: './wishlist.css'
 })
 export class Wishlist {
-  private storage = inject(StorageService);
+  readonly waitlist = inject(WaitlistService);
+  readonly auth = inject(ItadAuthService);
 
-  games = this.storage.games;
-  loading = computed(() => !this.storage.hydrated());
+  games = this.waitlist.games;
+  loading = computed(() => this.waitlist.loading() || !this.waitlist.hydrated());
 
-  async removeGame(id: number | undefined, event: Event) {
+  connect() {
+    void this.auth.login('/wishlist');
+  }
+
+  logout() {
+    this.auth.logout();
+    void this.waitlist.refresh();
+  }
+
+  async removeGame(uuid: string, event: Event) {
     event.stopPropagation();
-    if (id === undefined) return;
-
+    event.preventDefault();
     try {
-      await this.storage.removeGame(id);
+      await this.waitlist.remove(uuid);
     } catch (e) {
-      console.error('Failed to remove game', e);
+      console.error('Failed to remove game from ITAD waitlist', e);
     }
   }
 
-  formatPrice(amount: number) {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
+  banner(game: { assets?: { banner300?: string; banner400?: string; boxart?: string } }): string | null {
+    return game.assets?.banner300 || game.assets?.banner400 || game.assets?.boxart || null;
   }
 }

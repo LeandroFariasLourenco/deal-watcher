@@ -86,27 +86,26 @@
 
     <div class="p-4 sm:p-6 space-y-6">
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        @if (isAlreadyInWishlist()) {
-          <div class="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl bg-[#233827] border border-[#4c6b22] text-[#beee11] text-xs sm:text-sm font-bold flex items-center justify-center gap-2 select-none shadow-sm">
+        <button 
+          type="button"
+          [disabled]="adding()"
+          (click)="addToWishlist()"
+          class="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          [class]="isAlreadyInWishlist()
+            ? 'bg-[#233827] border border-[#4c6b22] text-[#beee11]'
+            : 'bg-[#4c6b22] hover:bg-[#5a7f29] active:scale-[0.99] text-white border border-[#75a634]/40'"
+        >
+          @if (adding()) {
+            <mat-icon class="!text-[20px] !w-5 !h-5 !leading-none overflow-visible shrink-0 animate-spin">refresh</mat-icon>
+            <span class="leading-normal">Atualizando...</span>
+          } @else if (isAlreadyInWishlist()) {
             <mat-icon class="!text-[20px] !w-5 !h-5 !leading-none overflow-visible shrink-0 text-[#beee11]">check_circle</mat-icon>
-            <span class="leading-normal">Na Lista de Desejos</span>
-          </div>
-        } @else {
-          <button 
-            type="button"
-            [disabled]="adding()"
-            (click)="addToWishlist()"
-            class="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl bg-[#4c6b22] hover:bg-[#5a7f29] active:scale-[0.99] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all border border-[#75a634]/40 shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            @if (adding()) {
-              <mat-icon class="!text-[20px] !w-5 !h-5 !leading-none overflow-visible shrink-0 animate-spin">refresh</mat-icon>
-              <span class="leading-normal">Adicionando...</span>
-            } @else {
-              <mat-icon class="!text-[20px] !w-5 !h-5 !leading-none overflow-visible shrink-0">favorite</mat-icon>
-              <span class="leading-normal">Adicionar à Lista de Desejos</span>
-            }
-          </button>
-        }
+            <span class="leading-normal">Na Waitlist · Remover</span>
+          } @else {
+            <mat-icon class="!text-[20px] !w-5 !h-5 !leading-none overflow-visible shrink-0">favorite</mat-icon>
+            <span class="leading-normal">Adicionar à Waitlist</span>
+          }
+        </button>
 
         @if (info.urls?.game) {
           <a 

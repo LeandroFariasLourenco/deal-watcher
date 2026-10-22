@@ -1,7 +1,7 @@
 import { Component, signal, computed, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ItadApiService } from '../../services/itad-api';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
@@ -12,7 +12,7 @@ import { ToastModule } from 'primeng/toast';
 import { ChartModule } from 'primeng/chart';
 import { MatIconModule } from '@angular/material/icon';
 import { DEFAULT_SHOP_IDS, ALLOWED_STORE_CONFIG } from '../../shared/constants';
-import { StorageService } from '../../services/storage';
+import { WaitlistService } from '../../services/waitlist';
 import { TimeService } from '../../services/time';
 
 export interface HistoryShopItem {
@@ -29,6 +29,7 @@ import { NavigationService } from '../../services/navigation';
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     ButtonModule,
     CardModule,
     TagModule,
@@ -46,7 +47,7 @@ export class Details implements OnInit {
   private itadApi = inject(ItadApiService);
   private route = inject(ActivatedRoute);
   private messageService = inject(MessageService);
-  private storage = inject(StorageService);
+  public waitlist = inject(WaitlistService);
   public timeService = inject(TimeService);
   public nav = inject(NavigationService);
 
@@ -56,7 +57,7 @@ export class Details implements OnInit {
   loading = signal(true);
   loadingHistory = signal(true);
   adding = signal(false);
-  isAlreadyInWishlist = computed(() => this.storage.isMonitored(this.uuid()));
+  isAlreadyInWishlist = computed(() => this.waitlist.isMonitored(this.uuid()));
   error = signal<string | null>(null);
 
   historyShops = signal<HistoryShopItem[]>([]);
@@ -334,22 +335,20 @@ export class Details implements OnInit {
   }
 
   async addToWishlist() {
-    const info = this.gameInfo();
     const uuid = this.uuid();
-    if (!info || !uuid) return;
-    
-    this.adding.set(true);
-    const game = {
-      itad_uuid: uuid,
-      title: info.title || 'Jogo Desconhecido',
-      banner: info.assets?.banner300 || info.assets?.boxart || null
-    };
+    if (!uuid) return;
 
+    this.adding.set(true);
     try {
-      await this.storage.addGame(game);
-      this.messageService.add({ severity: 'success', summary: 'Sucesso', detail: 'Jogo adicionado à lista de monitoramento' });
-    } catch (err: any) {
-      this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Erro ao adicionar jogo' });
+      const result = await this.waitlist.toggle(uuid);
+      if (result === 'login') return;
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Waitlist ITAD',
+        detail: result === 'removed' ? 'Removido da waitlist' : 'Adicionado à waitlist'
+      });
+    } catch {
+      this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Falha ao atualizar a waitlist' });
     } finally {
       this.adding.set(false);
     }

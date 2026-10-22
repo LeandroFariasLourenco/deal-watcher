@@ -72,3 +72,19 @@ export interface ITADShop {
   name: string;
   title: string;
 }
+
+export interface ITADWaitlistGame {
+  id: string;
+  slug: string;
+  title: string;
+  type: string;
+  mature: boolean;
+  added: string | null;
+  assets: {
+    banner145?: string;
+    banner300?: string;
+    banner400?: string;
+    banner600?: string;
+    boxart?: string;
+  };
+}

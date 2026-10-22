@@ -6,7 +6,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MatIconModule } from '@angular/material/icon';
-import { StorageService } from '../../services/storage';
+import { WaitlistService } from '../../services/waitlist';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { SearchStateService } from '../../services/search-state';
@@ -34,7 +34,7 @@ import { animate, stagger } from 'motion';
 })
 export class Search implements OnInit {
   private itadApi = inject(ItadApiService);
-  public storage = inject(StorageService);
+  public waitlist = inject(WaitlistService);
   private messageService = inject(MessageService);
   private searchState = inject(SearchStateService);
   public timeService = inject(TimeService);
@@ -153,22 +153,16 @@ export class Search implements OnInit {
 
   async addToWatchlist(game: any, event: Event) {
     event.stopPropagation();
-    const gameToSave = {
-      itad_uuid: game.id,
-      title: game.title,
-      banner: game.assets?.banner300 || null
-    };
-
     try {
-      const isMonitored = await this.storage.isGameMonitored(game.id);
-      if (isMonitored) {
-        this.messageService.add({ severity: 'info', summary: 'Info', detail: 'Jogo já está na lista' });
-        return;
-      }
-      await this.storage.addGame(gameToSave);
-      this.messageService.add({ severity: 'success', summary: 'Sucesso', detail: 'Adicionado à lista' });
-    } catch (err) {
-      this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Erro ao salvar' });
+      const result = await this.waitlist.toggle(game.id);
+      if (result === 'login') return;
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Waitlist ITAD',
+        detail: result === 'removed' ? 'Removido da waitlist' : 'Adicionado à waitlist'
+      });
+    } catch {
+      this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Falha ao atualizar a waitlist' });
     }
   }
 }

@@ -97,6 +97,70 @@ body {
   font-weight: bold;
 }
 
+.deal-cut {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  min-width: 3.25rem;
+  height: 1.5rem;
+  padding-inline: 0.375rem;
+  border-radius: 0.25rem;
+  background-color: #4c6b22;
+}
+
+@media (min-width: 640px) {
+  .deal-cut {
+    min-width: 3.5rem;
+    height: 2rem;
+    padding-inline: 0.5rem;
+  }
+}
+
+.watchlist-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .watchlist-btn {
+    display: inline-flex;
+  }
+}
+
+.watchlist-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #f87171;
+}
+
+.watchlist-btn.is-saved {
+  color: #f87171;
+  background-color: rgba(248, 113, 113, 0.15);
+}
+
+.watchlist-btn mat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+  line-height: 16px;
+  overflow: hidden;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
 }

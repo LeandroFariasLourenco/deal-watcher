@@ -29,5 +29,9 @@ export const routes: Routes = [
   {
     path: 'details/:uuid',
     loadComponent: () => import('./features/details/details').then(m => m.Details)
+  },
+  {
+    path: 'auth/callback',
+    loadComponent: () => import('./features/auth/callback').then(m => m.AuthCallback)
   }
 ];
