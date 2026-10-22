@@ -1,0 +1,222 @@
+<p-toast position="bottom-center"></p-toast>
+<div class="p-4 space-y-5 pb-24">
+  <header>
+    <h1 class="text-2xl font-bold text-white mb-1">Buscar Jogos</h1>
+  </header>
+
+  <form (submit)="onSearch(); $event.preventDefault()" class="relative flex items-center">
+    <button 
+      type="submit" 
+      class="absolute left-2.5 text-white/50 hover:text-[#66C0F4] bg-transparent border-none cursor-pointer flex items-center justify-center p-1"
+      aria-label="Buscar"
+    >
+      <mat-icon class="!text-lg">search</mat-icon>
+    </button>
+    <input 
+      type="text" 
+      pInputText 
+      [formControl]="searchControl" 
+      placeholder="Ex: Elden Ring, Cyberpunk 2077..." 
+      class="search-input !pl-10"
+    />
+    @if (searchControl.value) {
+      <button 
+        type="button" 
+        (click)="clearSearch()" 
+        class="absolute right-3 text-white/40 hover:text-white bg-transparent border-none cursor-pointer flex items-center justify-center p-1"
+        aria-label="Limpar pesquisa"
+      >
+        <mat-icon class="!text-base">close</mat-icon>
+      </button>
+    }
+  </form>
+
+  <!-- Search Results (When Active) -->
+  @if (results().length > 0) {
+    <div class="space-y-3">
+      <div class="flex items-center justify-between px-1">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-white/60 flex items-center gap-1.5">
+          <mat-icon class="!text-sm !w-4 !h-4 text-[#66C0F4]">search</mat-icon>
+          <span>Resultados da busca ({{ results().length }})</span>
+        </h2>
+        <button 
+          (click)="clearSearch()"
+          class="text-[11px] text-[#66C0F4] hover:text-white bg-transparent border-none cursor-pointer flex items-center gap-1"
+        >
+          <span>Voltar para Jogos em alta</span>
+        </button>
+      </div>
+
+      <div class="space-y-1 px-1">
+        @for (game of results(); track game.id) {
+          <div class="flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px]" [routerLink]="['/details', game.id]" [queryParams]="{ from: 'search' }">
+            <div class="game-thumb w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
+              @if (game.assets?.banner300) {
+                <img 
+                  [src]="game.assets.banner300" 
+                  [alt]="game.title"
+                  class="block w-full h-full object-cover object-center"
+                  referrerpolicy="no-referrer"
+                >
+              } @else {
+                <div class="w-full h-full flex items-center justify-center text-white/10">
+                  <mat-icon class="!text-sm">image</mat-icon>
+                </div>
+              }
+            </div>
+
+            <div class="flex-1 flex items-center px-3 py-2 min-w-0">
+              <div class="flex-1 min-w-0">
+                <h3 class="text-base font-medium text-[#C7D5E0] truncate leading-tight">{{ game.title }}</h3>
+                <div class="flex items-center gap-1.5 mt-1">
+                  <span class="text-xs text-[#66C0F4] uppercase font-bold tracking-wider">{{ game.type || 'Jogo' }}</span>
+                </div>
+              </div>
+              
+              <div class="shrink-0 flex items-center gap-3">
+                <button 
+                  type="button"
+                  (click)="addToWatchlist(game, $event)"
+                  [class.text-red-400]="storage.isMonitored(game.id)"
+                  [class.bg-red-400/15]="storage.isMonitored(game.id)"
+                  class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-white/30 hover:text-red-400 transition-all border-none cursor-pointer"
+                  [attr.title]="storage.isMonitored(game.id) ? 'Na lista de desejos' : 'Salvar na lista'"
+                >
+                  <mat-icon class="!text-base">{{ storage.isMonitored(game.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
+                </button>
+                <mat-icon class="text-white/10">chevron_right</mat-icon>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="space-y-1 px-1">
+      @for (i of [1,2,3,4,5]; track i) {
+        <div class="flex items-center bg-[#16202D]/50 border-b border-black/10 min-h-[72px] px-1">
+          <p-skeleton width="112px" height="72px"></p-skeleton>
+          <div class="flex-1 px-3 py-2 space-y-2">
+            <p-skeleton width="70%" height="0.8rem"></p-skeleton>
+            <p-skeleton width="30%" height="0.6rem"></p-skeleton>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  @if (!loading() && results().length === 0 && searchControl.value) {
+    <div class="text-center py-16 text-white/30 space-y-3">
+      <mat-icon class="!text-5xl opacity-20">search_off</mat-icon>
+      <p class="text-sm font-medium">Nenhum jogo encontrado para "{{ searchControl.value }}"</p>
+      <button (click)="clearSearch()" class="px-3 py-1.5 text-xs text-[#66C0F4] hover:text-white bg-white/5 rounded-lg border border-white/10 cursor-pointer">
+        Ver Jogos em alta
+      </button>
+    </div>
+  }
+
+  <!-- Jogos em alta (Loaded right below search bar when opening search) -->
+  @if (results().length === 0 && !loading()) {
+    <section class="space-y-2.5">
+      <div class="flex items-center justify-between px-1">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+          <mat-icon class="!text-base !w-4 !h-4 text-[#ff4655]">local_fire_department</mat-icon>
+          <span>Jogos em alta</span>
+        </h2>
+        <span class="text-[10px] text-white/40 uppercase font-semibold tracking-wider">Top 10 mais jogados</span>
+      </div>
+
+      @if (loadingTrending()) {
+        <div class="space-y-1 px-1">
+          @for (i of [1,2,3,4,5,6,7,8,9,10]; track i) {
+            <div class="flex items-center bg-[#16202D]/50 border-b border-black/10 min-h-[72px] px-1">
+              <p-skeleton width="112px" height="72px"></p-skeleton>
+              <div class="flex-1 px-3 py-2 space-y-2">
+                <p-skeleton width="60%" height="0.8rem"></p-skeleton>
+                <p-skeleton width="30%" height="0.6rem"></p-skeleton>
+              </div>
+              <div class="shrink-0 flex gap-2 items-center px-2">
+                <p-skeleton width="40px" height="24px"></p-skeleton>
+                <p-skeleton width="50px" height="18px"></p-skeleton>
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (trendingGames().length > 0) {
+        <div class="space-y-1 px-1">
+          @for (deal of trendingGames(); track deal.id; let i = $index) {
+            <div 
+              class="trending-cascade-item flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px]" 
+              [routerLink]="['/details', deal.id]" 
+              [queryParams]="{ from: 'search' }"
+              [style.animationDelay.ms]="i * 55"
+            >
+              <div class="game-thumb relative w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
+                <span class="absolute top-1 left-1 z-10 w-4 h-4 rounded bg-black/75 backdrop-blur-sm border border-white/20 text-[9px] font-bold text-white flex items-center justify-center tabular-nums">
+                  {{ i + 1 }}
+                </span>
+                @if (deal.assets?.banner300) {
+                  <img 
+                    [src]="deal.assets.banner300" 
+                    [alt]="deal.title"
+                    class="block w-full h-full object-cover object-center"
+                    referrerpolicy="no-referrer"
+                  >
+                } @else {
+                  <div class="w-full h-full flex items-center justify-center text-white/10">
+                    <mat-icon class="!text-sm">image</mat-icon>
+                  </div>
+                }
+              </div>
+
+              <div class="flex-1 flex items-center px-1.5 sm:px-3 py-2 min-w-0">
+                <div class="flex-1 min-w-0 pr-1 sm:pr-2">
+                  <h3 class="text-base font-medium text-[#C7D5E0] truncate leading-tight">{{ deal.title }}</h3>
+                  <div class="flex flex-col mt-0.5 sm:mt-1">
+                    <span class="text-[11px] sm:text-xs text-[#66C0F4] uppercase font-bold tracking-wider">{{ deal.shop.name }}</span>
+                    @if (timeService.getCountdown(deal.expiry); as countdown) {
+                      <span class="text-sm text-white/70 flex items-center gap-1 mt-1 font-medium">
+                        <mat-icon class="!text-[14px] !w-3.5 !h-3.5 !leading-none overflow-visible text-[#66C0F4]">schedule</mat-icon>
+                        <span>{{ countdown }}</span>
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <div class="shrink-0 flex items-center gap-1.5 sm:gap-2 mr-1 sm:mr-3">
+                  <button 
+                    type="button"
+                    (click)="addToWatchlist(deal, $event)"
+                    [class.text-red-400]="storage.isMonitored(deal.id)"
+                    [class.bg-red-400/15]="storage.isMonitored(deal.id)"
+                    class="flex items-center justify-center w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-red-400 transition-all border-none cursor-pointer"
+                    [attr.title]="storage.isMonitored(deal.id) ? 'Na lista de desejos' : 'Salvar na lista'"
+                  >
+                    <mat-icon class="!text-sm">{{ storage.isMonitored(deal.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
+                  </button>
+                </div>
+
+                <div class="flex items-center gap-1.5 sm:gap-2 ml-1 sm:ml-2 shrink-0">
+                  @if (deal.cut > 0) {
+                    <div class="bg-[#4c6b22] h-7 sm:h-8 px-2 rounded flex items-center justify-center shrink-0">
+                      <span class="text-[#beee11] text-sm font-bold tabular-nums leading-none tracking-tight flex items-center justify-center">-{{ deal.cut }}%</span>
+                    </div>
+                  }
+                  
+                  <div class="flex flex-col items-end justify-center min-w-[68px] sm:min-w-[88px]">
+                    @if (deal.cut > 0) {
+                      <span class="text-sm text-white/50 line-through leading-tight tabular-nums">{{ formatPrice(deal.regular.amount) }}</span>
+                    }
+                    <span class="text-base font-semibold text-[#beee11] leading-tight tabular-nums">{{ formatPrice(deal.price.amount) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>

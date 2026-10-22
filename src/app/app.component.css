@@ -1,0 +1,59 @@
+:host {
+  display: block;
+}
+
+.app-rail {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.pi {
+  font-size: 1.25rem;
+}
+
+.nav-tab {
+  color: rgba(255, 255, 255, 0.55);
+  text-decoration: none;
+}
+
+.nav-tab:hover {
+  color: #ffffff;
+  background-color: rgba(102, 192, 244, 0.08);
+}
+
+.nav-tab:hover .nav-icon {
+  transform: translateY(-1px);
+  color: #66C0F4;
+}
+
+.nav-icon {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.active-indicator {
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 3px;
+  background-color: transparent;
+  border-radius: 0 0 4px 4px;
+  transition: all 0.2s ease;
+}
+
+.nav-tab-active {
+  color: #66C0F4;
+  background: linear-gradient(180deg, rgba(102, 192, 244, 0.16) 0%, rgba(102, 192, 244, 0.02) 100%);
+}
+
+.nav-tab-active .nav-icon {
+  color: #66C0F4;
+  transform: translateY(-1px);
+}
+
+.nav-tab-active .active-indicator {
+  background-color: #66C0F4;
+  box-shadow: 0 2px 8px rgba(102, 192, 244, 0.6);
+}
+

@@ -1,0 +1,168 @@
+:host {
+  display: block;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.back-button mat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+  line-height: 1;
+  overflow: hidden;
+}
+
+:host ::ng-deep p-card {
+  display: block;
+}
+
+:host ::ng-deep .detail-meta-card.p-card {
+  background: linear-gradient(145deg, #1b2838 0%, #16202d 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  color: #c7d5e0 !important;
+}
+
+:host ::ng-deep .detail-meta-card .p-card-body {
+  padding: 0.75rem !important;
+}
+
+:host ::ng-deep .detail-meta-card .p-card-content {
+  padding: 0 !important;
+}
+
+:host ::ng-deep .deal-price-card.p-card {
+  background: linear-gradient(145deg, #1e2d40 0%, #16202d 100%) !important;
+  border: 1px solid rgba(102, 192, 244, 0.2) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  color: #c7d5e0 !important;
+}
+
+:host ::ng-deep .deal-price-card .p-card-body {
+  padding: 0.875rem 1rem !important;
+}
+
+:host ::ng-deep .deal-price-card .p-card-content {
+  padding: 0 !important;
+}
+
+:host ::ng-deep .detail-tag.p-tag {
+  background: rgba(102, 192, 244, 0.14) !important;
+  border: 1px solid rgba(102, 192, 244, 0.3) !important;
+  color: #66c0f4 !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  padding: 0.2rem 0.55rem !important;
+  border-radius: 6px !important;
+}
+
+:host ::ng-deep .store-card {
+  display: block;
+  background: linear-gradient(135deg, #1b2838 0%, #16202d 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+:host ::ng-deep .store-card .p-card-body,
+:host ::ng-deep .store-card .p-card-content {
+  padding: 0;
+}
+
+.store-card-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.65rem 0.75rem;
+  position: relative;
+}
+
+.store-active-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.store-icon-box {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.store-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.store-check-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+  color: #66C0F4;
+  flex-shrink: 0;
+}
+
+:host ::ng-deep .store-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(102, 192, 244, 0.5);
+  background: linear-gradient(135deg, #223447 0%, #1b2838 100%);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+:host ::ng-deep .store-card:hover .store-icon-box {
+  border-color: rgba(102, 192, 244, 0.4);
+  background-color: rgba(102, 192, 244, 0.12);
+}
+
+:host ::ng-deep .store-card:hover .store-icon {
+  color: #66C0F4;
+  transform: scale(1.08);
+}
+
+:host ::ng-deep .store-card-active {
+  background: linear-gradient(135deg, #243b52 0%, #1b2838 100%);
+  border-color: #66C0F4;
+  box-shadow: 0 0 14px rgba(102, 192, 244, 0.25);
+}
+
+:host ::ng-deep .store-card-active .store-active-bar {
+  background: #66C0F4;
+  box-shadow: 0 1px 8px rgba(102, 192, 244, 0.8);
+}
+
+:host ::ng-deep .store-card-active .store-icon-box {
+  background-color: rgba(102, 192, 244, 0.2);
+  border-color: #66C0F4;
+}
+
+:host ::ng-deep .store-card-active .store-icon {
+  color: #66C0F4;
+}

@@ -1,0 +1,62 @@
+<div class="p-4 space-y-6 pb-24">
+  <header>
+    <h1 class="text-2xl font-bold text-white">Lista de Desejos</h1>
+  </header>
+
+  <div class="space-y-1 px-1">
+    @if (loading() && games().length === 0) {
+      @for (i of [1,2,3,4,5]; track i) {
+        <div class="flex items-center bg-[#16202D]/50 border-b border-black/10 min-h-[72px] px-1">
+          <p-skeleton width="112px" height="72px"></p-skeleton>
+          <div class="flex-1 px-3 py-2 space-y-2">
+            <p-skeleton width="70%" height="0.8rem"></p-skeleton>
+            <p-skeleton width="30%" height="0.6rem"></p-skeleton>
+          </div>
+        </div>
+      }
+    } @else if (!loading() && games().length === 0) {
+      <div class="text-center py-24 text-white/20">
+        <mat-icon class="!text-6xl mb-4 opacity-10">visibility</mat-icon>
+        <p class="text-sm font-medium">Sua lista de desejos está vazia</p>
+        <p-button label="Buscar Jogos" routerLink="/search" styleClass="mt-6 p-button-link text-[#66C0F4]"></p-button>
+      </div>
+    } @else {
+      @for (game of games(); track game.id || game.itad_uuid) {
+        <div 
+          class="flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px]" 
+          [routerLink]="['/details', game.itad_uuid]" 
+          [queryParams]="{ from: 'wishlist' }"
+        >
+          <div class="game-thumb w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
+            @if (game.banner) {
+              <img 
+                [src]="game.banner" 
+                [alt]="game.title"
+                class="block w-full h-full object-cover object-center"
+                referrerpolicy="no-referrer"
+              >
+            } @else {
+              <div class="w-full h-full flex items-center justify-center text-white/10">
+                <mat-icon class="!text-sm">image</mat-icon>
+              </div>
+            }
+          </div>
+
+          <div class="flex-1 flex items-center px-3 py-2 min-w-0">
+            <div class="flex-1 min-w-0">
+              <h3 class="text-base font-medium text-[#C7D5E0] truncate leading-tight">{{ game.title }}</h3>
+            </div>
+            
+            <div class="shrink-0 ml-2">
+              <p-button 
+                icon="pi pi-trash" 
+                styleClass="p-button-text p-button-danger p-button-sm"
+                (click)="removeGame(game.id, $event)"
+              ></p-button>
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>

@@ -1,0 +1,72 @@
+<div class="flex flex-col h-screen overflow-hidden">
+  <main class="app-rail flex-1 overflow-y-auto pb-20 w-full max-w-6xl mx-auto">
+    <router-outlet></router-outlet>
+  </main>
+
+  <footer class="fixed bottom-0 left-0 right-0 h-16 bg-[#171A21] border-t border-white/10 z-50">
+    <div class="app-rail h-full w-full max-w-6xl mx-auto flex items-center justify-around px-2 gap-1">
+    <a routerLink="/deals" [class.nav-tab-active]="nav.currentTab() === 'deals'" class="nav-tab flex flex-col items-center justify-center space-y-1 flex-1 h-full relative rounded-lg transition-all duration-200">
+      <span class="active-indicator"></span>
+      <mat-icon class="nav-icon">local_offer</mat-icon>
+      <span class="text-[10px] uppercase font-bold tracking-wider">Ofertas</span>
+    </a>
+    
+    <a routerLink="/search" [class.nav-tab-active]="nav.currentTab() === 'search'" class="nav-tab flex flex-col items-center justify-center space-y-1 flex-1 h-full relative rounded-lg transition-all duration-200">
+      <span class="active-indicator"></span>
+      <mat-icon class="nav-icon">search</mat-icon>
+      <span class="text-[10px] uppercase font-bold tracking-wider">Pesquisa</span>
+    </a>
+
+    <!-- PWA Install Button (Android / Desktop) -->
+    @if (pwa.isInstallable() && !pwa.isInstalled()) {
+      <button (click)="pwa.install()" class="nav-tab flex flex-col items-center justify-center space-y-1 flex-1 h-full relative rounded-lg transition-all duration-200">
+        <mat-icon class="nav-icon text-emerald-400">download_for_offline</mat-icon>
+        <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-400">Instalar</span>
+      </button>
+    }
+
+    <!-- PWA Install Button (iOS) -->
+    @if (pwa.isIOS() && !pwa.isInstalled()) {
+      <button (click)="showIOSGuide.set(true)" class="nav-tab flex flex-col items-center justify-center space-y-1 flex-1 h-full relative rounded-lg transition-all duration-200">
+        <mat-icon class="nav-icon text-emerald-400">add_to_home_screen</mat-icon>
+        <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-400">Instalar</span>
+      </button>
+    }
+
+    <a routerLink="/wishlist" [class.nav-tab-active]="nav.currentTab() === 'wishlist'" class="nav-tab flex flex-col items-center justify-center space-y-1 flex-1 h-full relative rounded-lg transition-all duration-200">
+      <span class="active-indicator"></span>
+      <mat-icon class="nav-icon">visibility</mat-icon>
+      <span class="text-[10px] uppercase font-bold tracking-wider">Monitor</span>
+    </a>
+
+    <a routerLink="/giveaways" [class.nav-tab-active]="nav.currentTab() === 'giveaways'" class="nav-tab flex flex-col items-center justify-center space-y-1 flex-1 h-full relative rounded-lg transition-all duration-200">
+      <span class="active-indicator"></span>
+      <mat-icon class="nav-icon">card_giftcard</mat-icon>
+      <span class="text-[10px] uppercase font-bold tracking-wider">Grátis</span>
+    </a>
+    </div>
+  </footer>
+
+  <!-- iOS Guide Modal -->
+  @if (showIOSGuide()) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm">
+      <div class="w-full max-w-sm rounded-2xl bg-[#1B2838] p-8 shadow-2xl border border-white/10">
+        <div class="flex justify-center mb-4">
+          <mat-icon class="!w-12 !h-12 !text-5xl text-[#66C0F4]">apple</mat-icon>
+        </div>
+        <h3 class="text-xl font-bold text-white text-center">Instalar no iPhone</h3>
+        <p class="mt-4 text-sm text-[#C7D5E0] space-y-3">
+          <span class="block">1. Toque no botão de <strong>Compartilhar</strong> (ícone de quadrado com seta) na barra do Safari.</span>
+          <span class="block">2. Role para baixo e toque em <strong>Adicionar à Tela de Início</strong>.</span>
+        </p>
+        <button
+          (click)="showIOSGuide.set(false)"
+          class="mt-8 w-full rounded-xl bg-[#66C0F4] py-3.5 text-sm font-bold text-[#171A21] hover:bg-[#5bb1e2] transition-colors uppercase tracking-widest"
+        >
+          Entendi
+        </button>
+      </div>
+    </div>
+  }
+</div>
+
