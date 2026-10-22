@@ -1,10 +1,7 @@
 <p-toast position="bottom-center"></p-toast>
 <div class="p-3 sm:p-4 space-y-5">
-  <header class="flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-bold text-white">Ofertas do Dia</h1>
-    </div>
-    @if (selectedShops().length > 0) {
+  @if (selectedShops().length > 0) {
+    <header class="flex items-center justify-end">
       <button 
         type="button"
         (click)="clearShops()" 
@@ -13,8 +10,8 @@
         <mat-icon class="!text-sm !w-4 !h-4">filter_alt_off</mat-icon>
         <span>Limpar ({{ selectedShops().length }})</span>
       </button>
-    }
-  </header>
+    </header>
+  }
 
   <section class="space-y-2">
     <div class="flex items-center justify-between">
@@ -41,13 +38,13 @@
               </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between gap-1">
-                  <h3 class="text-xs font-bold text-white truncate">{{ shop.name }}</h3>
+                  <h3 class="text-sm font-bold text-white truncate">{{ shop.name }}</h3>
                   @if (isShopSelected(shop.id)) {
                     <mat-icon class="store-check-icon">check_circle</mat-icon>
                   }
                 </div>
-                <p class="text-[10px] text-white/50 truncate mt-0.5 tabular-nums">
-                  {{ shop.deals }} ofertas · {{ shop.games }} jogos
+                <p class="text-xs text-white/50 truncate mt-0.5 tabular-nums">
+                  {{ shop.deals }} ofertas
                 </p>
               </div>
             </div>
@@ -58,66 +55,12 @@
   </section>
 
   <div class="space-y-1">
-    @for (deal of deals(); track deal.id; let i = $index) {
-      <div 
-        class="cascade-item deal-row flex items-center bg-[#16202D] border-b border-black/20 transition-all cursor-pointer min-h-[72px]" 
-        [routerLink]="['/details', deal.id]" 
-        [queryParams]="{ from: 'deals' }"
-      >
-        <div class="game-thumb w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
-          @if (deal.assets?.banner300) {
-            <img 
-              [src]="deal.assets.banner300" 
-              [alt]="deal.title"
-              class="block w-full h-full object-cover object-center"
-              referrerpolicy="no-referrer"
-            >
-          } @else {
-            <div class="w-full h-full flex items-center justify-center text-white/10">
-              <mat-icon class="!text-sm">image</mat-icon>
-            </div>
-          }
-        </div>
-
-        <div class="flex-1 flex items-center px-1.5 sm:px-3 py-2 min-w-0">
-          <div class="flex-1 min-w-0 pr-1 sm:pr-2">
-            <h3 class="deal-title text-base font-medium text-[#C7D5E0] truncate leading-tight transition-colors">{{ deal.title }}</h3>
-            <div class="flex flex-col mt-0.5 sm:mt-1">
-              <span class="text-[11px] sm:text-xs text-[#66C0F4] uppercase font-bold tracking-wider">{{ deal.shop.name }}</span>
-              @if (timeService.getCountdown(deal.expiry); as countdown) {
-                <span class="text-sm text-white/70 flex items-center gap-1 mt-1 font-medium">
-                  <mat-icon class="!text-[14px] !w-3.5 !h-3.5 !leading-none overflow-visible text-[#66C0F4]">schedule</mat-icon>
-                  <span>{{ countdown }}</span>
-                </span>
-              }
-            </div>
-          </div>
-
-          <div class="flex flex-col-reverse items-end gap-1 sm:flex-row sm:items-center sm:gap-2 ml-1 sm:ml-2 shrink-0">
-            <button 
-              type="button"
-              (click)="addToWatchlist(deal, $event)"
-              class="watchlist-btn"
-              [class.is-saved]="waitlist.isMonitored(deal.id)"
-              [attr.title]="waitlist.isMonitored(deal.id) ? 'Na waitlist do ITAD' : 'Adicionar à waitlist'"
-            >
-              <mat-icon>{{ waitlist.isMonitored(deal.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
-            </button>
-            @if (deal.cut > 0) {
-              <div class="deal-cut">
-                <span class="text-[#beee11] text-sm font-bold tabular-nums leading-none tracking-tight">-{{ deal.cut }}%</span>
-              </div>
-            }
-            
-            <div class="flex flex-col items-end justify-center min-w-[68px] sm:min-w-[88px]">
-              @if (deal.cut > 0) {
-                <span class="text-sm text-white/50 line-through leading-tight tabular-nums">{{ formatPrice(deal.regular.amount) }}</span>
-              }
-              <span class="text-base font-semibold text-[#beee11] leading-tight tabular-nums">{{ formatPrice(deal.price.amount) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+    @for (deal of deals(); track deal.id) {
+      <app-game-price-card
+        class="cascade-item"
+        [game]="deal"
+        from="deals"
+      />
     }
 
     @if (loading()) {

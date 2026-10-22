@@ -3,6 +3,7 @@ import { Injectable, signal } from '@angular/core';
 export interface DealItem {
   id: string;
   title: string;
+  type?: string;
   shop: { id: number; name: string };
   price: { amount: number; currency: string };
   regular: { amount: number; currency: string };

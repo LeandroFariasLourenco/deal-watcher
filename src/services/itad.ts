@@ -263,12 +263,28 @@ export class ITADService {
     path: string,
     body?: string[]
   ): Promise<T> {
-    const response = await fetch(`${ITAD_BASE_URL}${path}`, {
+    try {
+      return await this.dispatchAuthorized<T>(`${ITAD_BASE_URL}${path}`, accessToken, method, body);
+    } catch (error) {
+      if (typeof window === 'undefined' || !(error instanceof TypeError) || path !== '/waitlist/games/v1') {
+        throw error;
+      }
+      return await this.dispatchAuthorized<T>('/api/itad/waitlist', accessToken, method, body);
+    }
+  }
+
+  private async dispatchAuthorized<T>(
+    url: string,
+    accessToken: string,
+    method: 'GET' | 'PUT' | 'DELETE',
+    body?: string[]
+  ): Promise<T> {
+    const response = await fetch(url, {
       method,
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Accept: 'application/json',
-        ...(body ? { 'Content-Type': 'text/plain' } : {})
+        ...(body ? { 'Content-Type': 'application/json' } : {})
       },
       body: body ? JSON.stringify(body) : undefined
     });
@@ -281,7 +297,7 @@ export class ITADService {
     const data = text ? JSON.parse(text) : null;
 
     if (!response.ok) {
-      const error = new Error(data?.reason_phrase || data?.error || `ITAD ${method} ${path} failed`) as Error & { status?: number };
+      const error = new Error(data?.reason_phrase || data?.error || `ITAD ${method} ${url} failed`) as Error & { status?: number };
       error.status = response.status;
       throw error;
     }

@@ -15,7 +15,7 @@ interface Giveaway {
   url?: string;
   store: { id: number; name: string };
   type: string;
-  games: { id: string; title: string; assets: { banner300?: string; banner400?: string; boxart?: string } }[];
+  games: { id: string; title: string; type?: string; assets: { banner300?: string; banner400?: string; boxart?: string } }[];
   start: string;
   expiry: string;
 }

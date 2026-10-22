@@ -1,0 +1,107 @@
+:host {
+  display: block;
+  background-color: #16202d;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  transition: background-color 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+  min-height: 72px;
+}
+
+.card-link {
+  display: flex;
+  align-items: center;
+  min-height: 72px;
+}
+
+:host:hover {
+  background-color: #213245;
+}
+
+:host:hover .deal-title {
+  color: #ffffff;
+}
+
+@media (max-width: 639px) {
+  :host,
+  .card-link {
+    min-height: 0;
+  }
+
+  .card-link {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .game-thumb {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 460 / 215;
+  }
+
+  .game-thumb img {
+    position: absolute;
+    inset: 0;
+  }
+
+  .rank-badge {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.75rem;
+  }
+
+  .card-body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.75rem 0.875rem 0.875rem;
+  }
+
+  .card-copy {
+    padding-right: 0;
+  }
+
+  .deal-title {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    text-overflow: unset;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .card-price {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .deal-cut {
+    order: 1;
+  }
+
+  .price-amounts {
+    order: 2;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  .watchlist-btn {
+    display: inline-flex;
+    order: 3;
+    margin-left: auto;
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .watchlist-btn mat-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    line-height: 20px;
+  }
+}

@@ -26,9 +26,11 @@ export class AuthCallback implements OnInit {
 
   async ngOnInit() {
     const params = this.route.snapshot.queryParamMap;
-    const code = params.get('code');
-    const state = params.get('state');
-    const oauthError = params.get('error_description') || params.get('error');
+    const search = new URLSearchParams(window.location.search);
+    const code = params.get('code') || search.get('code');
+    const state = params.get('state') || search.get('state');
+    const oauthError = params.get('error_description') || params.get('error')
+      || search.get('error_description') || search.get('error');
 
     if (oauthError) {
       this.message.set('Não foi possível conectar.');

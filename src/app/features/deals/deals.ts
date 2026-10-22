@@ -1,26 +1,13 @@
 import { Component, signal, computed, OnInit, inject, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MatIconModule } from '@angular/material/icon';
-import { TimeService } from '../../services/time';
-import { WaitlistService } from '../../services/waitlist';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { animate, stagger } from 'motion';
-
-interface Deal {
-  id: string;
-  title: string;
-  shop: { id: number; name: string };
-  price: { amount: number; currency: string };
-  regular: { amount: number; currency: string };
-  cut: number;
-  assets: { banner300?: string };
-  expiry?: string;
-}
+import { GamePriceCard } from '../../shared/game-price-card/game-price-card';
 
 interface ShopItem {
   id: number;
@@ -34,26 +21,23 @@ interface ShopItem {
 
 import { DEFAULT_SHOP_IDS, ALLOWED_STORE_CONFIG } from '../../shared/constants';
 
-import { DealsStateService } from '../../services/deals-state';
+import { DealItem, DealsStateService } from '../../services/deals-state';
 import { ItadApiService } from '../../services/itad-api';
 
 @Component({
   selector: 'app-deals',
   standalone: true,
-  imports: [CommonModule, CardModule, ButtonModule, SkeletonModule, RouterLink, MatIconModule, ToastModule],
+  imports: [CommonModule, CardModule, ButtonModule, SkeletonModule, MatIconModule, ToastModule, GamePriceCard],
   providers: [MessageService],
   templateUrl: './deals.html',
   styleUrl: './deals.css'
 })
 export class Deals implements OnInit {
   private itadApi = inject(ItadApiService);
-  public timeService = inject(TimeService);
-  public waitlist = inject(WaitlistService);
-  private messageService = inject(MessageService);
   private dealsState = inject(DealsStateService);
   private el = inject(ElementRef);
   
-  deals = signal<Deal[]>([]);
+  deals = signal<DealItem[]>([]);
   allApiShops = signal<any[]>([]);
   shops = signal<ShopItem[]>([]);
   loading = signal(true);
@@ -168,9 +152,10 @@ export class Deals implements OnInit {
     this.itadApi.getDeals('BR', this.offset(), this.limit, shops, 'rank').subscribe({
       next: (data) => {
         const rawList = Array.isArray(data?.list) ? data.list : (Array.isArray(data) ? data : []);
-        const newDeals: Deal[] = rawList.map((item: any) => ({
+        const newDeals: DealItem[] = rawList.map((item: any) => ({
           id: item.id,
           title: item.title,
+          type: item.type,
           shop: item.deal?.shop || item.shop || { id: 0, name: 'Loja Oficial' },
           price: item.deal?.price || item.price || { amount: 0, currency: 'BRL' },
           regular: item.deal?.regular || item.regular || { amount: 0, currency: 'BRL' },
@@ -225,30 +210,5 @@ export class Deals implements OnInit {
     this.loadDeals(true);
   }
 
-  formatPrice(amount: any) {
-    if (amount === undefined || amount === null) return '-';
-    try {
-      const val = typeof amount === 'object' && amount !== null ? (amount.amount ?? amount.price ?? 0) : Number(amount);
-      if (isNaN(val)) return '-';
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-    } catch {
-      return `R$ ${amount}`;
-    }
-  }
-
-  async addToWatchlist(deal: Deal, event: Event) {
-    event.stopPropagation();
-    try {
-      const result = await this.waitlist.toggle(deal.id);
-      if (result === 'login') return;
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Waitlist ITAD',
-        detail: result === 'removed' ? 'Removido da waitlist' : 'Adicionado à waitlist'
-      });
-    } catch {
-      this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Falha ao atualizar a waitlist' });
-    }
-  }
 }
 

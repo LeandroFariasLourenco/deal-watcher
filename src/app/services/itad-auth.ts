@@ -2,9 +2,13 @@ import { Injectable, signal } from '@angular/core';
 import {
   ITAD_AUTHORIZE_URL,
   ITAD_CLIENT_ID,
-  ITAD_CLIENT_SECRET,
+  ITAD_CODE_VERIFIER_KEY,
   ITAD_SCOPES,
-  ITAD_TOKEN_URL
+  ITAD_TOKEN_URL,
+  base64urlencode,
+  generateRandomString,
+  itadRedirectUri,
+  sha256
 } from '../shared/itad-oauth';
 
 interface TokenPayload {
@@ -16,7 +20,6 @@ interface TokenPayload {
 }
 
 const TOKEN_KEY = 'itad_oauth_tokens';
-const VERIFIER_KEY = 'itad_oauth_verifier';
 const STATE_KEY = 'itad_oauth_state';
 const RETURN_KEY = 'itad_oauth_return';
 
@@ -32,11 +35,18 @@ export class ItadAuthService {
   }
 
   redirectUri(): string {
-    const base = document.querySelector('base')?.href || `${location.origin}/`;
-    return new URL('auth/callback', base).href;
+    return itadRedirectUri();
+  }
+
+  /** True while the browser is sitting on an ITAD redirect (`code` or `error`). */
+  hasOauthReturn(): boolean {
+    const params = new URLSearchParams(window.location.search);
+    return params.has('code') || params.has('error') || params.has('error_description');
   }
 
   async restore(): Promise<void> {
+    if (this.hasOauthReturn()) return;
+
     const tokens = this.readTokens();
     if (!tokens?.access_token) {
       this.clearSession();
@@ -66,24 +76,27 @@ export class ItadAuthService {
   }
 
   async login(returnUrl = '/wishlist'): Promise<void> {
-    const verifier = this.randomUrlSafe(32);
-    const state = this.randomUrlSafe(16);
-    const challenge = await this.sha256Challenge(verifier);
-
-    sessionStorage.setItem(VERIFIER_KEY, verifier);
+    const codeVerifier = generateRandomString(64);
+    sessionStorage.setItem(ITAD_CODE_VERIFIER_KEY, codeVerifier);
+    const state = generateRandomString(32);
     sessionStorage.setItem(STATE_KEY, state);
     sessionStorage.setItem(RETURN_KEY, returnUrl || '/wishlist');
 
-    const url = new URL(ITAD_AUTHORIZE_URL);
-    url.searchParams.set('client_id', ITAD_CLIENT_ID);
-    url.searchParams.set('response_type', 'code');
-    url.searchParams.set('redirect_uri', this.redirectUri());
-    url.searchParams.set('scope', ITAD_SCOPES);
-    url.searchParams.set('state', state);
-    url.searchParams.set('code_challenge', challenge);
-    url.searchParams.set('code_challenge_method', 'S256');
+    const hashed = await sha256(codeVerifier);
+    const codeChallenge = base64urlencode(hashed);
+    const clientId = ITAD_CLIENT_ID;
+    const redirectUri = this.redirectUri();
+    const scope = ITAD_SCOPES;
+    const authUrl = `${ITAD_AUTHORIZE_URL}?` +
+      `response_type=code` +
+      `&client_id=${clientId}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&scope=${encodeURIComponent(scope)}` +
+      `&state=${encodeURIComponent(state)}` +
+      `&code_challenge=${codeChallenge}` +
+      `&code_challenge_method=S256`;
 
-    location.assign(url.toString());
+    window.location.href = authUrl;
   }
 
   consumeReturnUrl(): string {
@@ -94,9 +107,9 @@ export class ItadAuthService {
 
   async completeLogin(code: string, state: string): Promise<void> {
     const expectedState = sessionStorage.getItem(STATE_KEY);
-    const verifier = sessionStorage.getItem(VERIFIER_KEY);
+    const verifier = sessionStorage.getItem(ITAD_CODE_VERIFIER_KEY);
     sessionStorage.removeItem(STATE_KEY);
-    sessionStorage.removeItem(VERIFIER_KEY);
+    sessionStorage.removeItem(ITAD_CODE_VERIFIER_KEY);
 
     if (!expectedState || state !== expectedState || !verifier) {
       throw new Error('Sessão OAuth inválida. Tente conectar novamente.');
@@ -138,10 +151,20 @@ export class ItadAuthService {
   private async exchange(params: Record<string, string>): Promise<void> {
     const body = new URLSearchParams({
       client_id: ITAD_CLIENT_ID,
-      client_secret: ITAD_CLIENT_SECRET,
       ...params
     });
 
+    const payload = await this.postToken(body);
+    if (!payload.access_token) {
+      throw new Error(payload.error_description || payload.error || 'Falha ao autenticar no IsThereAnyDeal');
+    }
+
+    this.persistTokens(payload);
+    this.accessToken.set(payload.access_token);
+    this.loggedIn.set(true);
+  }
+
+  private async postToken(body: URLSearchParams): Promise<TokenPayload & { error?: string; error_description?: string }> {
     const response = await fetch(ITAD_TOKEN_URL, {
       method: 'POST',
       headers: {
@@ -155,17 +178,15 @@ export class ItadAuthService {
     if (!response.ok || !payload.access_token) {
       throw new Error(payload.error_description || payload.error || 'Falha ao autenticar no IsThereAnyDeal');
     }
-
-    this.persistTokens(payload);
-    this.accessToken.set(payload.access_token);
-    this.loggedIn.set(true);
+    return payload;
   }
 
   private persistTokens(payload: TokenPayload) {
     const expiresAt = Date.now() + Math.max(30, (payload.expires_in ?? 3600) - 30) * 1000;
+    const previous = this.readTokens();
     localStorage.setItem(TOKEN_KEY, JSON.stringify({
       access_token: payload.access_token,
-      refresh_token: payload.refresh_token,
+      refresh_token: payload.refresh_token || previous?.refresh_token,
       expires_at: expiresAt
     }));
   }
@@ -188,22 +209,5 @@ export class ItadAuthService {
     localStorage.removeItem(TOKEN_KEY);
     this.accessToken.set(null);
     this.loggedIn.set(false);
-  }
-
-  private randomUrlSafe(bytes: number): string {
-    const buffer = crypto.getRandomValues(new Uint8Array(bytes));
-    return this.toBase64Url(buffer);
-  }
-
-  private async sha256Challenge(verifier: string): Promise<string> {
-    const data = new TextEncoder().encode(verifier);
-    const digest = await crypto.subtle.digest('SHA-256', data);
-    return this.toBase64Url(new Uint8Array(digest));
-  }
-
-  private toBase64Url(bytes: Uint8Array): string {
-    let binary = '';
-    bytes.forEach(byte => { binary += String.fromCharCode(byte); });
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
   }
 }

@@ -1,10 +1,6 @@
 <div class="p-4 space-y-6 pb-24">
-  <header class="flex items-start justify-between gap-3">
-    <div>
-      <h1 class="text-2xl font-bold text-white">Lista de Desejos</h1>
-      <p class="text-sm text-white/50 mt-1">Sincronizada com a Waitlist do IsThereAnyDeal</p>
-    </div>
-    @if (auth.isLoggedIn()) {
+  @if (auth.isLoggedIn()) {
+    <header class="flex items-center justify-end">
       <button
         type="button"
         (click)="logout()"
@@ -12,15 +8,15 @@
       >
         Sair
       </button>
-    }
-  </header>
+    </header>
+  }
 
   @if (!auth.isLoggedIn()) {
     <div class="text-center py-16 px-4 rounded-2xl bg-[#16202D] border border-white/10">
       <mat-icon class="!text-6xl mb-4 text-[#66C0F4]/40">link</mat-icon>
       <h2 class="text-lg font-bold text-white">Conecte sua conta ITAD</h2>
       <p class="text-sm text-white/55 max-w-md mx-auto mt-2">
-        Adicionar e remover jogos usa a Waitlist oficial do IsThereAnyDeal. Não há mais cópia local.
+        Adicionar e remover jogos usa a Waitlist oficial do IsThereAnyDeal.
       </p>
       <button
         type="button"
@@ -29,10 +25,6 @@
       >
         Entrar com IsThereAnyDeal
       </button>
-      <p class="text-[11px] text-white/35 mt-4 max-w-md mx-auto break-all">
-        No app ITAD, cadastre o redirect:
-        {{ auth.redirectUri() }}
-      </p>
     </div>
   } @else {
     <div class="space-y-1 px-1">
@@ -55,11 +47,14 @@
       } @else {
         @for (game of games(); track game.id) {
           <div 
-            class="flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px]" 
+            class="waitlist-card flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px]" 
             [routerLink]="['/details', game.id]" 
             [queryParams]="{ from: 'wishlist' }"
           >
-            <div class="game-thumb w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
+            <div class="game-thumb relative w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
+              @if ((game.type || '').toLowerCase() === 'dlc') {
+                <span class="dlc-strip">DLC</span>
+              }
               @if (banner(game); as image) {
                 <img 
                   [src]="image" 
@@ -74,15 +69,15 @@
               }
             </div>
 
-            <div class="flex-1 flex items-center px-3 py-2 min-w-0">
-              <div class="flex-1 min-w-0">
-                <h3 class="text-base font-medium text-[#C7D5E0] truncate leading-tight">{{ game.title }}</h3>
+            <div class="waitlist-body flex-1 flex items-center px-3 py-2 min-w-0">
+              <div class="waitlist-copy flex-1 min-w-0">
+                <h3 class="waitlist-title text-base font-medium text-[#C7D5E0] truncate leading-tight">{{ game.title }}</h3>
                 @if (game.added) {
                   <p class="text-xs text-white/45 mt-0.5">Adicionado em {{ game.added | date:'dd/MM/yyyy' }}</p>
                 }
               </div>
               
-              <div class="shrink-0 ml-2">
+              <div class="waitlist-actions shrink-0 ml-2">
                 <p-button 
                   icon="pi pi-trash" 
                   styleClass="p-button-text p-button-danger p-button-sm"

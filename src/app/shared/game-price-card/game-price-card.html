@@ -1,0 +1,63 @@
+<div class="card-link" [routerLink]="['/details', game().id]" [queryParams]="{ from: from() }">
+<div class="game-thumb relative w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
+  @if (rank(); as position) {
+    <span class="rank-badge absolute top-1 left-1 z-10 w-4 h-4 rounded bg-black/75 backdrop-blur-sm border border-white/20 text-[9px] font-bold text-white flex items-center justify-center tabular-nums">
+      {{ position }}
+    </span>
+  }
+  @if ((game().type || '').toLowerCase() === 'dlc') {
+    <span class="dlc-strip">DLC</span>
+  }
+  @if (game().assets?.banner300) {
+    <img
+      [src]="game().assets.banner300"
+      [alt]="game().title"
+      class="block w-full h-full object-cover object-center"
+      referrerpolicy="no-referrer"
+    >
+  } @else {
+    <div class="w-full h-full flex items-center justify-center text-white/10">
+      <mat-icon class="!text-sm">image</mat-icon>
+    </div>
+  }
+</div>
+
+<div class="card-body flex-1 flex items-center px-1.5 sm:px-3 py-2 min-w-0">
+  <div class="card-copy flex-1 min-w-0 pr-1 sm:pr-2">
+    <h3 class="deal-title text-base font-medium text-[#C7D5E0] truncate leading-tight transition-colors">{{ game().title }}</h3>
+    <div class="flex flex-col mt-0.5 sm:mt-1">
+      <span class="text-[11px] sm:text-xs text-[#66C0F4] uppercase font-bold tracking-wider">{{ game().shop.name }}</span>
+      @if (timeService.getCountdown(game().expiry); as countdown) {
+        <span class="text-sm text-white/70 flex items-center gap-1 mt-1 font-medium">
+          <mat-icon class="!text-[14px] !w-3.5 !h-3.5 !leading-none overflow-visible text-[#66C0F4]">schedule</mat-icon>
+          <span>{{ countdown }}</span>
+        </span>
+      }
+    </div>
+  </div>
+
+  <div class="card-price flex flex-col-reverse items-end gap-1 sm:flex-row sm:items-center sm:gap-2 ml-1 sm:ml-2 shrink-0">
+    <button
+      type="button"
+      (click)="addToWatchlist($event)"
+      class="watchlist-btn"
+      [class.is-saved]="waitlist.isMonitored(game().id)"
+      [attr.title]="waitlist.isMonitored(game().id) ? 'Na waitlist do ITAD' : 'Adicionar à waitlist'"
+    >
+      <mat-icon>{{ waitlist.isMonitored(game().id) ? 'favorite' : 'favorite_border' }}</mat-icon>
+    </button>
+    @if (game().cut > 0) {
+      <div class="deal-cut">
+        <span class="text-[#beee11] text-sm font-bold tabular-nums leading-none tracking-tight">-{{ game().cut }}%</span>
+      </div>
+    }
+
+    <div class="price-amounts flex flex-col items-end justify-center min-w-[68px] sm:min-w-[88px]">
+      @if (game().cut > 0) {
+        <span class="text-sm text-white/50 line-through leading-tight tabular-nums">{{ formatPrice(game().regular.amount) }}</span>
+      }
+      <span class="text-base font-semibold text-[#beee11] leading-tight tabular-nums">{{ formatPrice(game().price.amount) }}</span>
+    </div>
+  </div>
+</div>
+</div>

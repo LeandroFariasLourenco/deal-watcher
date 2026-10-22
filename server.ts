@@ -62,6 +62,41 @@ const saveData = (data: any) => {
 async function startServer() {
   app.use(express.json());
 
+  app.all('/api/itad/waitlist', async (req, res) => {
+    const method = req.method.toUpperCase();
+    if (!['GET', 'PUT', 'DELETE'].includes(method)) {
+      res.status(405).json({ error: 'method_not_allowed' });
+      return;
+    }
+
+    const authorization = req.header('authorization');
+    if (!authorization?.toLowerCase().startsWith('bearer ')) {
+      res.status(401).json({ error: 'not_authenticated' });
+      return;
+    }
+
+    try {
+      const response = await axios.request({
+        url: 'https://api.isthereanydeal.com/waitlist/games/v1',
+        method,
+        headers: {
+          Authorization: authorization,
+          Accept: 'application/json',
+          ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' })
+        },
+        data: method === 'GET' ? undefined : req.body,
+        validateStatus: () => true
+      });
+      if (response.status === 204 || response.data == null || response.data === '') {
+        res.status(response.status).end();
+        return;
+      }
+      res.status(response.status).json(response.data);
+    } catch (e: any) {
+      res.status(502).json({ error: 'waitlist_failed', error_description: e.message });
+    }
+  });
+
   app.get('/api/settings', (_req, res) => {
     res.json(loadData().settings);
   });

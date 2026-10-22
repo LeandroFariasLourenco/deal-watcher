@@ -39,7 +39,7 @@ export class WaitlistService {
         this.auth.logout();
         this.sync([]);
       }
-      this.error.set('Não foi possível carregar a lista de desejos do IsThereAnyDeal.');
+      this.error.set('Não foi possível carregar a lista de espera do IsThereAnyDeal.');
       throw error;
     } finally {
       this.loading.set(false);

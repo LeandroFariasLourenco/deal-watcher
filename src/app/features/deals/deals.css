@@ -111,14 +111,6 @@
   color: #66C0F4;
 }
 
-.deal-row:hover {
-  background-color: #213245;
-}
-
-.deal-row:hover .deal-title {
-  color: #ffffff;
-}
-
 .load-more-link mat-icon {
   display: inline-flex;
   align-items: center;
