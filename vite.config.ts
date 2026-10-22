@@ -6,7 +6,15 @@ import {defineConfig} from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 const isGitHubPages = process.env.GITHUB_PAGES === 'true';
-const basePath = isGitHubPages ? '/deal-watcher/' : '/';
+const pagesBasePath = process.env.VITE_BASE_PATH?.trim();
+const basePath =
+  isGitHubPages && pagesBasePath
+    ? pagesBasePath.endsWith('/')
+      ? pagesBasePath
+      : `${pagesBasePath}/`
+    : isGitHubPages
+      ? '/deal-watcher/'
+      : '/';
 
 export default defineConfig(() => {
   return {
