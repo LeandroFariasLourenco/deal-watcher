@@ -166,3 +166,18 @@
 :host ::ng-deep .store-card-active .store-icon {
   color: #66C0F4;
 }
+
+@media (max-width: 639px) {
+  :host ::ng-deep .detail-meta-card .p-card-body {
+    padding: 0.45rem 0.6rem !important;
+  }
+
+  :host ::ng-deep .deal-price-card .p-card-body {
+    padding: 0.5rem 0.65rem !important;
+  }
+
+  :host ::ng-deep .deal-price-card .space-y-3 > :not([hidden]) ~ :not([hidden]),
+  :host ::ng-deep .detail-meta-card .space-y-2\.5 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.35rem !important;
+  }
+}

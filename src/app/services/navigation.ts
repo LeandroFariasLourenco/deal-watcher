@@ -30,6 +30,8 @@ export class NavigationService {
         if (to && this.scrolls.has(to)) {
           const top = this.scrolls.get(to) ?? 0;
           requestAnimationFrame(() => this.writeScroll(top));
+        } else if (!to) {
+          requestAnimationFrame(() => this.writeScroll(0));
         }
       }
     });

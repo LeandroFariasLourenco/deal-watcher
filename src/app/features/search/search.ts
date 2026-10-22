@@ -181,13 +181,7 @@ export class Search implements OnInit {
   async addToWatchlist(game: any, event: Event) {
     event.stopPropagation();
     try {
-      const result = await this.waitlist.toggle(game.id);
-      if (result === 'login' || result === 'added') return;
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Waitlist ITAD',
-        detail: 'Removido da waitlist'
-      });
+      await this.waitlist.toggle(game.id);
     } catch {
       this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Falha ao atualizar a waitlist' });
     }

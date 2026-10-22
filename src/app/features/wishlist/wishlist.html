@@ -77,11 +77,14 @@
               </div>
               
               <div class="waitlist-actions shrink-0 ml-2">
-                <p-button 
-                  icon="pi pi-trash" 
-                  styleClass="p-button-text p-button-danger p-button-sm"
+                <button
+                  type="button"
                   (click)="removeGame(game.id, $event)"
-                ></p-button>
+                  class="watchlist-btn is-saved"
+                  title="Remover da waitlist"
+                >
+                  <mat-icon>favorite</mat-icon>
+                </button>
               </div>
             </div>
           </div>

@@ -340,13 +340,7 @@ export class Details implements OnInit {
 
     this.adding.set(true);
     try {
-      const result = await this.waitlist.toggle(uuid);
-      if (result === 'login' || result === 'added') return;
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Waitlist ITAD',
-        detail: 'Removido da waitlist'
-      });
+      await this.waitlist.toggle(uuid);
     } catch {
       this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Falha ao atualizar a waitlist' });
     } finally {
