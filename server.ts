@@ -32,10 +32,8 @@ const loadData = () => {
   if (!fs.existsSync(DB_FILE)) {
     return { 
       settings: { 
-        country: 'BR', 
-        check_interval_minutes: 240, 
-        itad_client_id: '8dff7a638baade84',
-        itad_client_secret: 'aa40e0b85534846b0a3ba714446747fd9f584143' 
+        country: 'BR',
+        check_interval_minutes: 240 
       }, 
       notifications: [] 
     };
@@ -45,10 +43,8 @@ const loadData = () => {
   } catch (e) {
     return { 
       settings: { 
-        country: 'BR', 
-        check_interval_minutes: 240, 
-        itad_client_id: '8dff7a638baade84',
-        itad_client_secret: 'aa40e0b85534846b0a3ba714446747fd9f584143' 
+        country: 'BR',
+        check_interval_minutes: 240 
       }, 
       notifications: [] 
     };
@@ -61,41 +57,7 @@ const saveData = (data: any) => {
 
 async function startServer() {
   app.use(express.json());
-
-  app.all('/api/itad/waitlist', async (req, res) => {
-    const method = req.method.toUpperCase();
-    if (!['GET', 'PUT', 'DELETE'].includes(method)) {
-      res.status(405).json({ error: 'method_not_allowed' });
-      return;
-    }
-
-    const authorization = req.header('authorization');
-    if (!authorization?.toLowerCase().startsWith('bearer ')) {
-      res.status(401).json({ error: 'not_authenticated' });
-      return;
-    }
-
-    try {
-      const response = await axios.request({
-        url: 'https://api.isthereanydeal.com/waitlist/games/v1',
-        method,
-        headers: {
-          Authorization: authorization,
-          Accept: 'application/json',
-          ...(method === 'GET' ? {} : { 'Content-Type': 'application/json' })
-        },
-        data: method === 'GET' ? undefined : req.body,
-        validateStatus: () => true
-      });
-      if (response.status === 204 || response.data == null || response.data === '') {
-        res.status(response.status).end();
-        return;
-      }
-      res.status(response.status).json(response.data);
-    } catch (e: any) {
-      res.status(502).json({ error: 'waitlist_failed', error_description: e.message });
-    }
-  });
+  const itad = new ITADService();
 
   app.get('/api/settings', (_req, res) => {
     res.json(loadData().settings);
@@ -114,10 +76,6 @@ async function startServer() {
 
   app.get('/api/proxy/itad/search', async (req, res) => {
     const { q, offset, limit } = req.query;
-    const { itad_client_id, itad_client_secret } = loadData().settings;
-    if (!itad_client_id || !itad_client_secret) return res.status(400).json({ error: 'API Credentials missing' });
-    
-    const itad = new ITADService(itad_client_id, itad_client_secret);
     try {
       const results = await itad.searchGames(q as string, Number(offset) || 0, Number(limit) || 20);
       res.json(results);
@@ -130,10 +88,6 @@ async function startServer() {
 
   app.get('/api/proxy/itad/shops', async (req, res) => {
     const country = (req.query.country as string) || 'BR';
-    const { itad_client_id, itad_client_secret } = loadData().settings;
-    if (!itad_client_id || !itad_client_secret) return res.status(400).json({ error: 'API Credentials missing' });
-    
-    const itad = new ITADService(itad_client_id, itad_client_secret);
     try {
       const results = await itad.getShops(country);
       res.json(results);
@@ -145,12 +99,7 @@ async function startServer() {
   app.get('/api/proxy/itad/deals', async (req, res) => {
     const { country, offset, limit, shops, sort } = req.query;
     const targetCountry = (country as string) || 'BR';
-    const { itad_client_id, itad_client_secret } = loadData().settings;
-    if (!itad_client_id || !itad_client_secret) return res.status(400).json({ error: 'API Credentials missing' });
-    
     const shopIds = parseShopIds(shops);
-    
-    const itad = new ITADService(itad_client_id, itad_client_secret);
     try {
       const results = await itad.getDeals(targetCountry, Number(offset) || 0, Number(limit) || 20, shopIds, (sort as string) || undefined);
       res.json(results);
@@ -162,10 +111,6 @@ async function startServer() {
   app.post('/api/proxy/itad/prices', async (req, res) => {
     const uuids = Array.isArray(req.body) ? req.body : req.body?.uuids || [];
     const shopIds = parseShopIds(req.query.shops || req.body?.shops);
-    const { itad_client_id, itad_client_secret } = loadData().settings;
-    if (!itad_client_id || !itad_client_secret) return res.status(400).json({ error: 'API Credentials missing' });
-    
-    const itad = new ITADService(itad_client_id, itad_client_secret);
     try {
       const results = await itad.getPrices(uuids, 'BR', shopIds);
       res.json(results);
@@ -177,10 +122,6 @@ async function startServer() {
   app.get('/api/proxy/itad/details/:uuid', async (req, res) => {
     const { uuid } = req.params;
     const shopIds = parseShopIds(req.query.shops);
-    const { itad_client_id, itad_client_secret } = loadData().settings;
-    if (!itad_client_id || !itad_client_secret) return res.status(400).json({ error: 'API Credentials missing' });
-
-    const itad = new ITADService(itad_client_id, itad_client_secret);
     try {
       const details = await itad.getGameDetails(uuid, 'BR', shopIds);
       res.json(details);
@@ -192,10 +133,6 @@ async function startServer() {
   app.get('/api/proxy/itad/history/:uuid', async (req, res) => {
     const { uuid } = req.params;
     const shopIds = parseShopIds(req.query.shops);
-    const { itad_client_id, itad_client_secret } = loadData().settings;
-    if (!itad_client_id || !itad_client_secret) return res.status(400).json({ error: 'API Credentials missing' });
-
-    const itad = new ITADService(itad_client_id, itad_client_secret);
     try {
       const history = await itad.getHistory(uuid, 'BR', shopIds);
       res.json(history);
@@ -206,10 +143,6 @@ async function startServer() {
 
   app.get('/api/proxy/itad/giveaways', async (req, res) => {
     const { offset, limit, sort } = req.query;
-    const { itad_client_id, itad_client_secret } = loadData().settings;
-    if (!itad_client_id || !itad_client_secret) return res.status(400).json({ error: 'API Credentials missing' });
-
-    const itad = new ITADService(itad_client_id, itad_client_secret);
     try {
       const results = await itad.getGiveaways(Number(offset) || 0, Number(limit) || 20, (sort as string) || undefined);
       res.json(results);

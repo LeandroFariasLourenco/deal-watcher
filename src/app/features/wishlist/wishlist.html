@@ -39,10 +39,9 @@
           </div>
         }
       } @else if (!loading() && games().length === 0) {
-        <div class="text-center py-24 text-white/20">
-          <mat-icon class="!text-6xl mb-4 opacity-10">visibility</mat-icon>
-          <p class="text-sm font-medium">Sua waitlist no ITAD está vazia</p>
-          <p-button label="Buscar Jogos" routerLink="/search" styleClass="mt-6 p-button-link text-[#66C0F4]"></p-button>
+        <div class="text-center py-16 px-4 rounded-2xl bg-[#16202D] border border-white/10">
+          <mat-icon class="!text-6xl !w-16 !h-16 mb-4 text-[#66C0F4]">bookmark</mat-icon>
+          <h2 class="text-lg font-bold text-white">Sua waitlist no ITAD está vazia</h2>
         </div>
       } @else {
         @for (game of games(); track game.id) {

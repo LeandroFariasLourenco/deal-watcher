@@ -6,7 +6,7 @@ import { ITADService } from '../../services/itad';
   providedIn: 'root'
 })
 export class ItadApiService {
-  private readonly itad = new ITADService('', '');
+  private readonly itad = new ITADService();
 
   getShops(country = 'BR') {
     return from(this.itad.getShops(country));

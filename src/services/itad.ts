@@ -1,20 +1,14 @@
 import axios from 'axios';
 import { ITADGame, ITADPriceResponse, ITADGameDetails, ITADHistoryPrice, ITADWaitlistGame } from '../types/itad';
 import { cache, COLLECTIONS } from './cache';
-
-const ITAD_BASE_URL = 'https://api.isthereanydeal.com';
+import { ITAD_API_BASE } from './itad-endpoints';
 
 export const ALLOWED_SHOP_IDS: number[] = [4, 36, 16, 48, 35, 62, 61, 50];
 
 export class ITADService {
-  constructor(_clientId: string, _clientSecret: string) {}
-
   private get client() {
     return axios.create({
-      baseURL: ITAD_BASE_URL,
-      params: {
-        key: 'f5f27e16501a779ab814878df837a45ea28a1da2'
-      },
+      baseURL: ITAD_API_BASE,
       headers: {
         Accept: 'application/json'
       }
@@ -263,14 +257,7 @@ export class ITADService {
     path: string,
     body?: string[]
   ): Promise<T> {
-    try {
-      return await this.dispatchAuthorized<T>(`${ITAD_BASE_URL}${path}`, accessToken, method, body);
-    } catch (error) {
-      if (typeof window === 'undefined' || !(error instanceof TypeError) || path !== '/waitlist/games/v1') {
-        throw error;
-      }
-      return await this.dispatchAuthorized<T>('/api/itad/waitlist', accessToken, method, body);
-    }
+    return await this.dispatchAuthorized<T>(`${ITAD_API_BASE}${path}`, accessToken, method, body);
   }
 
   private async dispatchAuthorized<T>(
@@ -311,8 +298,9 @@ export class ITADService {
   }
 
   async addToWaitlist(accessToken: string, uuids: string[]): Promise<void> {
-    if (uuids.length === 0) return;
-    await this.authorizedRequest<void>(accessToken, 'PUT', '/waitlist/games/v1', uuids);
+    const id = uuids[0];
+    if (!id) return;
+    await this.authorizedRequest<void>(accessToken, 'PUT', '/waitlist/games/v1', [id]);
   }
 
   async removeFromWaitlist(accessToken: string, uuids: string[]): Promise<void> {

@@ -8,7 +8,7 @@ import { ItadAuthService } from './itad-auth';
 })
 export class WaitlistService {
   private readonly auth = inject(ItadAuthService);
-  private readonly itad = new ITADService('', '');
+  private readonly itad = new ITADService();
 
   readonly games = signal<ITADWaitlistGame[]>([]);
   readonly monitoredUuids = signal<Set<string>>(new Set());

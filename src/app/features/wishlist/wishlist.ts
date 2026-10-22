@@ -1,7 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MatIconModule } from '@angular/material/icon';
 import { WaitlistService } from '../../services/waitlist';
@@ -10,7 +9,7 @@ import { ItadAuthService } from '../../services/itad-auth';
 @Component({
   selector: 'app-wishlist',
   standalone: true,
-  imports: [CommonModule, ButtonModule, SkeletonModule, RouterLink, MatIconModule],
+  imports: [CommonModule, SkeletonModule, RouterLink, MatIconModule],
   templateUrl: './wishlist.html',
   styleUrl: './wishlist.css'
 })

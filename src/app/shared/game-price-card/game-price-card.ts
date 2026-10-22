@@ -41,11 +41,11 @@ export class GamePriceCard {
     event.preventDefault();
     try {
       const result = await this.waitlist.toggle(this.game().id);
-      if (result === 'login') return;
+      if (result === 'login' || result === 'added') return;
       this.messageService.add({
         severity: 'success',
         summary: 'Waitlist ITAD',
-        detail: result === 'removed' ? 'Removido da waitlist' : 'Adicionado à waitlist',
+        detail: 'Removido da waitlist',
       });
     } catch {
       this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Falha ao atualizar a waitlist' });

@@ -149,12 +149,10 @@ export class ItadAuthService {
   }
 
   private async exchange(params: Record<string, string>): Promise<void> {
-    const body = new URLSearchParams({
+    const payload = await this.postToken({
       client_id: ITAD_CLIENT_ID,
       ...params
     });
-
-    const payload = await this.postToken(body);
     if (!payload.access_token) {
       throw new Error(payload.error_description || payload.error || 'Falha ao autenticar no IsThereAnyDeal');
     }
@@ -164,14 +162,14 @@ export class ItadAuthService {
     this.loggedIn.set(true);
   }
 
-  private async postToken(body: URLSearchParams): Promise<TokenPayload & { error?: string; error_description?: string }> {
+  private async postToken(body: Record<string, string>): Promise<TokenPayload & { error?: string; error_description?: string }> {
     const response = await fetch(ITAD_TOKEN_URL, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body
+      body: new URLSearchParams(body).toString()
     });
 
     const payload = (await response.json().catch(() => ({}))) as TokenPayload & { error?: string; error_description?: string };
