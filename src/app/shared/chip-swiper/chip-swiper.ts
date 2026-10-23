@@ -43,6 +43,7 @@ export class ChipSwiper {
   loading = input(false);
   skeletonCount = input(6);
   centerOnClick = input(false);
+  freeMode = input(false);
 
   select = output<ChipTile>();
 

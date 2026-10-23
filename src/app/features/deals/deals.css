@@ -115,3 +115,112 @@
     padding-inline: var(--page-gutter);
   }
 }
+
+.browse-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  width: 100%;
+}
+
+.browse-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.browse-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.browse-chip {
+  min-height: 2rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: #1b2838;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.browse-chip.is-active {
+  border-color: #66c0f4;
+  background: rgba(102, 192, 244, 0.16);
+  color: #66c0f4;
+}
+
+.browse-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+}
+
+.browse-list app-game-price-card,
+.browse-list .game-price-card {
+  width: 100%;
+}
+
+.browse-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 72px;
+  padding: 0 0.75rem;
+  background: #16202d;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.browse-skeleton-copy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.browse-empty {
+  margin: 0;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.45);
+  background: #16202d;
+}
+
+.browse-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(199, 213, 224, 0.7);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.browse-more:hover:not(:disabled) {
+  color: #66c0f4;
+}
+
+.browse-more:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.browse-more mat-icon {
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}

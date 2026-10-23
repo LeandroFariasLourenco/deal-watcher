@@ -1,0 +1,167 @@
+:host {
+  display: block;
+}
+
+.owned-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding-block: 0.85rem 1.25rem;
+}
+
+.owned-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.owned-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  margin-left: -0.4rem;
+  color: #66c0f4;
+  text-decoration: none;
+}
+
+.owned-back mat-icon {
+  font-size: 1.65rem;
+  width: 1.65rem;
+  height: 1.65rem;
+}
+
+.owned-head-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.owned-head-copy h1 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.owned-head-copy p {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(199, 213, 224, 0.55);
+}
+
+.owned-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.15rem, 1fr));
+  gap: 0.5rem 0.4rem;
+}
+
+.owned-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.owned-tile-art {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 460 / 215;
+  overflow: hidden;
+  border-radius: 0.4rem;
+  background: #0e141b;
+}
+
+.owned-tile-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.owned-tile-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.16);
+}
+
+.owned-tile-empty mat-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.owned-tile-title {
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: rgba(199, 213, 224, 0.78);
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.owned-tile:hover .owned-tile-title {
+  color: #ffffff;
+}
+
+.owned-tile-skeleton {
+  pointer-events: none;
+}
+
+.owned-tile-art p-skeleton,
+.owned-tile-art .p-skeleton {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.owned-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.25rem 0;
+}
+
+.owned-empty p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(199, 213, 224, 0.6);
+}
+
+.owned-reconnect {
+  min-height: 2.35rem;
+  padding: 0 0.9rem;
+  border: 1px solid rgba(117, 166, 52, 0.4);
+  border-radius: 0.7rem;
+  background: #4c6b22;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (min-width: 640px) {
+  .owned-grid {
+    grid-template-columns: repeat(auto-fill, minmax(6.25rem, 1fr));
+    gap: 0.65rem 0.5rem;
+  }
+
+  .owned-head-copy h1 {
+    font-size: 1.2rem;
+  }
+}

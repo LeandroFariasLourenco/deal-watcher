@@ -1,7 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, DetachedRouteHandle, RouteReuseStrategy } from '@angular/router';
-
-const CACHED_TABS = new Set(['deals', 'search', 'waitlist', 'giveaways']);
+import { ActivatedRouteSnapshot, DetachedRouteHandle, Route, RouteReuseStrategy } from '@angular/router';
 
 @Injectable()
 export class TabRouteReuseStrategy implements RouteReuseStrategy {
@@ -14,12 +12,10 @@ export class TabRouteReuseStrategy implements RouteReuseStrategy {
   store(route: ActivatedRouteSnapshot, handle: DetachedRouteHandle | null): void {
     const key = this.routeKey(route);
     if (!key) return;
-
     if (handle) {
       this.handles.set(key, handle);
       return;
     }
-
     this.handles.delete(key);
   }
 
@@ -33,16 +29,20 @@ export class TabRouteReuseStrategy implements RouteReuseStrategy {
     return key ? this.handles.get(key) ?? null : null;
   }
 
+  retrieveStoredRouteHandles(): DetachedRouteHandle[] {
+    return [...this.handles.values()];
+  }
+
+  shouldDestroyInjector(_route: Route): boolean {
+    return true;
+  }
+
   shouldReuseRoute(future: ActivatedRouteSnapshot, curr: ActivatedRouteSnapshot): boolean {
     return future.routeConfig === curr.routeConfig && this.sameParams(future, curr);
   }
 
   private routeKey(route: ActivatedRouteSnapshot): string | null {
-    const segments = route.pathFromRoot
-      .flatMap(snapshot => snapshot.url.map(segment => segment.path))
-      .filter(Boolean);
-    const path = segments[0] ?? route.routeConfig?.path ?? '';
-    if (CACHED_TABS.has(path)) return path;
+    const path = route.routeConfig?.path;
     if (route.routeConfig?.data?.['reuse'] === true && path) return path;
     return null;
   }

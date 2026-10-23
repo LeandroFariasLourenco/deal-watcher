@@ -59,11 +59,8 @@ body.is-deals-tab {
   overflow-x: visible;
 }
 
-app-deals,
-app-search,
-app-waitlist,
-app-giveaways,
-app-details {
+app-details,
+app-owned {
   animation: tab-fade-in 220ms ease both;
 }
 
@@ -79,11 +76,8 @@ app-details {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  app-deals,
-  app-search,
-  app-waitlist,
-  app-giveaways,
-  app-details {
+  app-details,
+  app-owned {
     animation: none !important;
   }
 }

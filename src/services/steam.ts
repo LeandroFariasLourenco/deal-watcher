@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { cache, CACHE_TTL, COLLECTIONS } from './cache';
+import { STEAM_API_BASE } from './steam-endpoints';
 
 export interface SteamWishlistItem {
   name: string;
@@ -196,8 +197,7 @@ export class SteamService {
     const cached = await cache.get<SteamAppReviews>(COLLECTIONS.STEAM, cacheKey);
     if (cached) return cached;
 
-    const query = steamReviewsQuery(appId, type);
-    const url = this.reviewsUrl(query);
+    const url = `${STEAM_API_BASE}/IUserReviewsService/GetAppReviews/v1?${steamReviewsQuery(appId, type)}`;
 
     try {
       const response = await axios.get(url, { timeout: 12000 });
@@ -228,7 +228,7 @@ export class SteamService {
       return mapSteamNewsItems(appId, cached);
     }
 
-    const url = this.newsUrl(steamNewsQuery(appId));
+    const url = `${STEAM_API_BASE}/ISteamNews/GetNewsForApp/v2?${steamNewsQuery(appId)}`;
 
     try {
       const response = await axios.get(url, { timeout: 12000 });
@@ -240,20 +240,6 @@ export class SteamService {
       console.error('Steam News Error:', error);
       throw error;
     }
-  }
-
-  private reviewsUrl(query: string): string {
-    return this.steamApiUrl(`/api/proxy/steam/reviews?${query}`, `https://api.steampowered.com/IUserReviewsService/GetAppReviews/v1?${query}`);
-  }
-
-  private newsUrl(query: string): string {
-    return this.steamApiUrl(`/api/proxy/steam/news?${query}`, `https://api.steampowered.com/ISteamNews/GetNewsForApp/v2?${query}`);
-  }
-
-  private steamApiUrl(localPath: string, remoteUrl: string): string {
-    const host = typeof window === 'undefined' ? '' : window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') return localPath;
-    return remoteUrl;
   }
 
   async getWishlist(steamId: string): Promise<Record<string, SteamWishlistItem>> {

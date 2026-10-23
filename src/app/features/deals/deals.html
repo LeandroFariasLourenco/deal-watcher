@@ -50,9 +50,24 @@
           </swiper-slide>
         }
 
-        @if (feed.loading() || feed.loadingMore()) {
+        @if (feed.loading() && feed.items().length === 0) {
           @for (i of skeletonSlots; track i) {
             <swiper-slide class="featured-card-wrap">
+              <div class="featured-skeleton">
+                <p-skeleton width="100%" height="7.6rem" borderRadius="0.9rem 0.9rem 0 0"></p-skeleton>
+                <div class="featured-skeleton-body">
+                  <p-skeleton width="70%" height="0.9rem"></p-skeleton>
+                  <p-skeleton width="40%" height="0.55rem"></p-skeleton>
+                  <p-skeleton width="55%" height="0.8rem"></p-skeleton>
+                </div>
+              </div>
+            </swiper-slide>
+          }
+        }
+
+        @if (feed.loadingMore()) {
+          @for (i of pageSkeletonSlots; track i) {
+            <swiper-slide class="featured-card-wrap featured-page-skeleton">
               <div class="featured-skeleton">
                 <p-skeleton width="100%" height="7.6rem" borderRadius="0.9rem 0.9rem 0 0"></p-skeleton>
                 <div class="featured-skeleton-body">
@@ -68,4 +83,70 @@
     </section>
     }
   }
+
+  <section class="browse-section deals-centered">
+    <h2 class="deals-section-title">
+      <mat-icon>view_list</mat-icon>
+      <span>Explorar ofertas</span>
+    </h2>
+
+    <div class="browse-toolbar">
+      <div class="browse-chip-row" role="group" aria-label="Filtro de preço">
+        @for (option of priceFilters; track option.max) {
+          <button
+            type="button"
+            class="browse-chip"
+            [class.is-active]="browsePriceMax() === option.max"
+            (click)="setBrowsePrice(option.max)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+      <div class="browse-chip-row" role="group" aria-label="Ordenação">
+        @for (option of sortOptions; track option.id) {
+          <button
+            type="button"
+            class="browse-chip"
+            [class.is-active]="browseSort() === option.id"
+            (click)="setBrowseSort(option.id)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="browse-list">
+      @if (browseLoading() && browseItems().length === 0) {
+        @for (i of [1,2,3,4,5,6]; track i) {
+          <div class="browse-skeleton">
+            <p-skeleton width="7rem" height="4.5rem"></p-skeleton>
+            <div class="browse-skeleton-copy">
+              <p-skeleton width="70%" height="0.85rem"></p-skeleton>
+              <p-skeleton width="40%" height="0.65rem"></p-skeleton>
+            </div>
+          </div>
+        }
+      } @else if (!browseLoading() && browseItems().length === 0) {
+        <p class="browse-empty">Nenhuma oferta encontrada para esses filtros.</p>
+      } @else {
+        @for (deal of browseItems(); track deal.id + '-' + deal.shop.id) {
+          <app-game-price-card [game]="deal" from="deals" />
+        }
+      }
+    </div>
+
+    @if (!browseLoading() && browseItems().length > 0 && browseHasMore()) {
+      <button
+        type="button"
+        class="browse-more"
+        [disabled]="browseLoadingMore()"
+        (click)="loadMoreBrowse()"
+      >
+        <span>{{ browseLoadingMore() ? 'Carregando...' : 'Ver mais ofertas' }}</span>
+        <mat-icon>keyboard_arrow_down</mat-icon>
+      </button>
+    }
+  </section>
 </div>

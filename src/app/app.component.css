@@ -12,6 +12,26 @@
   overflow-x: hidden;
 }
 
+.tab-stack,
+.details-host {
+  width: 100%;
+}
+
+.tab-page:not(.is-active),
+.tab-stack.is-parked,
+.details-host.is-parked {
+  visibility: hidden;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.tab-page.is-active {
+  position: relative;
+}
+
 .app-disclaimer {
   max-width: 26rem;
   margin: 1.75rem auto 0;

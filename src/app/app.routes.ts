@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { TabPlaceholder } from './routing/tab-placeholder';
 
 export const routes: Routes = [
   {
@@ -8,18 +9,15 @@ export const routes: Routes = [
   },
   {
     path: 'deals',
-    loadComponent: () => import('./features/deals/deals').then(m => m.Deals),
-    data: { reuse: true }
+    component: TabPlaceholder
   },
   {
     path: 'search',
-    loadComponent: () => import('./features/search/search').then(m => m.Search),
-    data: { reuse: true }
+    component: TabPlaceholder
   },
   {
     path: 'waitlist',
-    loadComponent: () => import('./features/waitlist/waitlist').then(m => m.Waitlist),
-    data: { reuse: true }
+    component: TabPlaceholder
   },
   {
     path: 'wishlist',
@@ -28,8 +26,11 @@ export const routes: Routes = [
   },
   {
     path: 'giveaways',
-    loadComponent: () => import('./features/giveaways/giveaways').then(m => m.Giveaways),
-    data: { reuse: true }
+    component: TabPlaceholder
+  },
+  {
+    path: 'owned',
+    loadComponent: () => import('./features/owned/owned').then(m => m.Owned)
   },
   {
     path: 'details/:uuid',

@@ -63,6 +63,7 @@ export class Deals implements OnInit {
   selectedShops = signal<number[]>([]);
   limit = 20;
   readonly skeletonSlots = Array.from({ length: this.limit }, (_, i) => i);
+  readonly pageSkeletonSlots = [1, 2, 3];
 
   feeds: DealFeed[] = [
     this.createFeed('featured', 'Em destaques', 'auto_awesome', 'rank', true),
@@ -90,7 +91,30 @@ export class Deals implements OnInit {
 
   allShopsCaption = computed(() => `${this.formatDealCount(this.totalDeals())} ofertas`);
 
-  shopsLocked = computed(() => this.feeds.some(feed => feed.loading()));
+  shopsLocked = computed(() => this.feeds.some(feed => feed.loading()) || this.browseLoading());
+
+  readonly priceFilters: Array<{ label: string; max: number }> = [
+    { label: 'Até R$10', max: 10 },
+    { label: 'Até R$25', max: 25 },
+    { label: 'Até R$50', max: 50 },
+  ];
+
+  readonly sortOptions: Array<{ id: string; label: string }> = [
+    { id: 'time', label: 'Mais novos' },
+    { id: '-time', label: 'Mais antigos' },
+    { id: 'expiry', label: 'Expirando' },
+    { id: 'price', label: 'Mais baratos' },
+    { id: '-price', label: 'Mais caros' },
+  ];
+
+  browseItems = signal<DealItem[]>([]);
+  browseOffset = signal(0);
+  browseLoading = signal(true);
+  browseLoadingMore = signal(false);
+  browseHasMore = signal(true);
+  browsePriceMax = signal<number | null>(null);
+  browseSort = signal<string | null>('expiry');
+  private browseSeq = 0;
 
   totalDeals = computed(() =>
     this.shops().reduce((sum, shop) => sum + (Number(shop.deals) || 0), 0)
@@ -110,6 +134,7 @@ export class Deals implements OnInit {
           this.loadFeed(feed.id);
         }
       }
+      this.loadBrowse();
     } else {
       this.loadShops();
     }
@@ -223,6 +248,7 @@ export class Deals implements OnInit {
     for (const feed of this.feeds) {
       this.loadFeed(feed.id);
     }
+    this.loadBrowse();
   }
 
   private mapDeals(data: any): DealItem[] {
@@ -326,6 +352,69 @@ export class Deals implements OnInit {
     if (feed.loading() || feed.loadingMore() || !feed.hasMore()) return;
     feed.offset.update(v => v + this.limit);
     this.loadFeed(id, true);
+  }
+
+  setBrowsePrice(max: number) {
+    this.browsePriceMax.update(current => current === max ? null : max);
+    this.loadBrowse();
+  }
+
+  setBrowseSort(sort: string) {
+    this.browseSort.update(current => current === sort ? null : sort);
+    this.loadBrowse();
+  }
+
+  loadMoreBrowse() {
+    if (this.browseLoading() || this.browseLoadingMore() || !this.browseHasMore()) return;
+    this.browseOffset.update(v => v + this.limit);
+    this.loadBrowse(true);
+  }
+
+  private browseFilter(): Record<string, unknown> | null {
+    const max = this.browsePriceMax();
+    if (max == null) return null;
+    return { price: { min: null, max } };
+  }
+
+  loadBrowse(append = false) {
+    const shops: number[] = this.activeShopIds();
+    if (shops.length === 0) {
+      this.browseLoading.set(false);
+      this.browseLoadingMore.set(false);
+      return;
+    }
+
+    if (!append) {
+      this.browseOffset.set(0);
+      this.browseItems.set([]);
+      this.browseHasMore.set(true);
+      this.browseLoading.set(true);
+      this.browseLoadingMore.set(false);
+    } else {
+      this.browseLoadingMore.set(true);
+    }
+
+    const seq = ++this.browseSeq;
+    const offset = this.browseOffset();
+    this.itadApi.getDeals(APP_COUNTRY, offset, this.limit, shops, this.browseSort() ?? undefined, this.browseFilter()).subscribe({
+      next: (data) => {
+        if (seq !== this.browseSeq) return;
+        const newDeals = this.mapDeals(data);
+        if (append) {
+          this.browseItems.update(current => [...current, ...newDeals]);
+        } else {
+          this.browseItems.set(newDeals);
+        }
+        this.browseHasMore.set(newDeals.length >= this.limit);
+        this.browseLoading.set(false);
+        this.browseLoadingMore.set(false);
+      },
+      error: () => {
+        if (seq !== this.browseSeq) return;
+        this.browseLoading.set(false);
+        this.browseLoadingMore.set(false);
+      }
+    });
   }
 
 }

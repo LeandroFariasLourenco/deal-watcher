@@ -172,10 +172,20 @@
   } @else {
     @if (ownedLoading() || ownedRecent().length > 0 || owned.error()) {
       <section class="owned-section">
-        <h2 class="owned-section-title">
-          <mat-icon>shopping_bag</mat-icon>
-          <span>Comprados</span>
-        </h2>
+        <div class="owned-section-head">
+          <h2 class="owned-section-title">
+            <mat-icon>shopping_bag</mat-icon>
+            <span>Comprados</span>
+          </h2>
+          <a
+            class="owned-all-link"
+            routerLink="/owned"
+            aria-label="Ver todos os jogos comprados"
+          >
+            <span>Ver todos</span>
+            <mat-icon>chevron_right</mat-icon>
+          </a>
+        </div>
 
         @if (owned.error(); as error) {
           <div class="owned-error">

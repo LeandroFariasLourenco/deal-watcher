@@ -12,6 +12,7 @@
   short-swipes="true"
   prevent-clicks="false"
   prevent-clicks-propagation="false"
+  [attr.free-mode]="freeMode() ? 'true' : null"
 >
   @if (loading()) {
     @for (i of skeletons(); track i) {

@@ -15,8 +15,15 @@ export class ItadApiService {
     return from(this.itad.getShops(country));
   }
 
-  getDeals(country = APP_COUNTRY, offset = 0, limit = 20, shops?: number[], sort?: string) {
-    return from(this.itad.getDeals(country, offset, limit, shops, sort));
+  getDeals(
+    country = APP_COUNTRY,
+    offset = 0,
+    limit = 20,
+    shops?: number[],
+    sort?: string,
+    filter?: Record<string, unknown> | null
+  ) {
+    return from(this.itad.getDeals(country, offset, limit, shops, sort, filter));
   }
 
   searchGames(query: string, offset = 0, limit = 20) {

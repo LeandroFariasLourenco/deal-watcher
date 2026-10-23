@@ -1,0 +1,67 @@
+<div class="owned-page page-gutter">
+  <header class="owned-head">
+    <a routerLink="/waitlist" class="owned-back" aria-label="Voltar para a waitlist">
+      <mat-icon>chevron_left</mat-icon>
+    </a>
+    <div class="owned-head-copy">
+      <h1>Comprados</h1>
+      @if (games().length > 0) {
+        <p>{{ games().length }} {{ games().length === 1 ? 'jogo' : 'jogos' }}</p>
+      }
+    </div>
+  </header>
+
+  @if (!auth.isLoggedIn()) {
+    <div class="owned-empty">
+      <p>Entre com a conta ITAD para ver os jogos comprados.</p>
+      <button type="button" class="owned-reconnect" (click)="reconnect()">Entrar com IsThereAnyDeal</button>
+    </div>
+  } @else {
+    @if (owned.error(); as error) {
+      <div class="owned-empty">
+        <p>{{ error }}</p>
+        @if (owned.needsReconnect()) {
+          <button type="button" class="owned-reconnect" (click)="reconnect()">Reconectar</button>
+        }
+      </div>
+    }
+
+    @if (loading() && games().length === 0) {
+      <div class="owned-grid">
+        @for (i of skeletonSlots; track i) {
+          <div class="owned-tile owned-tile-skeleton">
+            <div class="owned-tile-art">
+              <p-skeleton width="100%" height="100%"></p-skeleton>
+            </div>
+            <p-skeleton width="80%" height="0.55rem"></p-skeleton>
+          </div>
+        }
+      </div>
+    } @else if (games().length === 0 && !owned.error()) {
+      <div class="owned-empty">
+        <p>Nenhum jogo marcado como comprado.</p>
+      </div>
+    } @else if (games().length > 0) {
+      <div class="owned-grid">
+        @for (game of games(); track game.id) {
+          <a
+            class="owned-tile"
+            [routerLink]="['/details', game.id]"
+            [queryParams]="{ from: 'owned' }"
+          >
+            <div class="owned-tile-art">
+              @if (banner(game); as image) {
+                <img [src]="image" [alt]="game.title" referrerpolicy="no-referrer" />
+              } @else {
+                <div class="owned-tile-empty">
+                  <mat-icon>sports_esports</mat-icon>
+                </div>
+              }
+            </div>
+            <h2 class="owned-tile-title">{{ game.title }}</h2>
+          </a>
+        }
+      </div>
+    }
+  }
+</div>

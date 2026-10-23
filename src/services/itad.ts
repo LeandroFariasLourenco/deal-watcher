@@ -51,11 +51,19 @@ export class ITADService {
     }
   }
 
-  async getDeals(country = APP_COUNTRY, offset = 0, limit = 20, shops: number[] = ALLOWED_SHOP_IDS, sort?: string): Promise<any> {
+  async getDeals(
+    country = APP_COUNTRY,
+    offset = 0,
+    limit = 20,
+    shops: number[] = ALLOWED_SHOP_IDS,
+    sort?: string,
+    filter?: Record<string, unknown> | null
+  ): Promise<any> {
     const normalizedCountry = this.resolveCountry(country);
     const targetShops = this.resolveShops(shops);
     const sortedShopsKey = [...targetShops].sort((a, b) => a - b).join(',');
-    const cacheKey = `${normalizedCountry}:${offset}:${limit}:${sortedShopsKey}:${sort || 'default'}:nondeals=false`;
+    const filterKey = filter ? JSON.stringify(filter) : '';
+    const cacheKey = `${normalizedCountry}:offset=${offset}:limit=${limit}:shops=${sortedShopsKey}:sort=${sort || ''}:filter=${filterKey}:nondeals=false`;
     const cached = await cache.get<any>(COLLECTIONS.DEALS, cacheKey);
     if (cached) return cached;
 
@@ -69,6 +77,9 @@ export class ITADService {
       };
       if (sort) {
         params.sort = sort;
+      }
+      if (filter) {
+        params.filter = JSON.stringify(filter);
       }
       const response = await this.client.get('/deals/v2', { params });
       const data = response.data;

@@ -418,6 +418,14 @@
   margin-inline: calc(var(--page-gutter) * -1);
 }
 
+.owned-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-inline: var(--page-gutter);
+}
+
 .owned-section-title,
 .waitlist-section-title {
   display: flex;
@@ -431,6 +439,30 @@
   text-transform: uppercase;
   color: #ffffff;
   line-height: 1.2;
+}
+
+.owned-section-title {
+  padding-inline: 0;
+}
+
+.owned-all-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  color: #66c0f4;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.owned-all-link mat-icon {
+  font-size: 1.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
 }
 
 .waitlist-section {

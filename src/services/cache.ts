@@ -30,7 +30,7 @@ export const COLLECTIONS = {
 
 export const CACHE_TTL = {
   SEARCH: DAY,
-  DEALS: MINUTE * 15,
+  DEALS: HOUR * 8,
   DEALS_STEAM_PLAYERS: DAY,
   LOOKUPS: DAY * 7,
   PRICES: MINUTE * 15,

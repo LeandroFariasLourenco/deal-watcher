@@ -17,13 +17,16 @@ export class NavigationService {
 
   currentTab = signal<MainTab>('deals');
   isDetailsPage = signal(false);
+  private currentUrl = signal(this.router.url);
   isDealsList = computed(() => this.currentTab() === 'deals' && !this.isDetailsPage());
   useAppRail = computed(() => !this.isDealsList());
+  isMainTabView = computed(() => this.tabFromUrl(this.currentUrl()) !== null);
 
   constructor() {
+    this.updateContextFromUrl(this.router.url);
     this.router.events.subscribe(event => {
       if (event instanceof NavigationStart) {
-        const from = this.tabFromUrl(this.router.url);
+        const from = this.viewKey(this.router.url);
         if (from) {
           this.scrolls.set(from, this.readScroll());
         }
@@ -31,22 +34,33 @@ export class NavigationService {
 
       if (event instanceof NavigationEnd) {
         const url = event.urlAfterRedirects || event.url || '';
+        this.currentUrl.set(url);
         this.updateContextFromUrl(url);
         this.queuedTab = null;
-        const to = this.tabFromUrl(url);
+        const to = this.viewKey(url);
         if (to && this.scrolls.has(to)) {
           const top = this.scrolls.get(to) ?? 0;
-          requestAnimationFrame(() => this.writeScroll(top));
+          this.writeScrollSoon(top);
         } else if (!to) {
-          requestAnimationFrame(() => this.writeScroll(0));
+          this.writeScrollSoon(0);
         }
       }
     });
   }
 
+  private firstPath(url: string): string {
+    return url.split('?')[0].split('#')[0].replace(/^\//, '').split('/')[0];
+  }
+
   private tabFromUrl(url: string): MainTab | null {
-    const path = url.split('?')[0].split('#')[0].replace(/^\//, '').split('/')[0];
+    const path = this.firstPath(url);
     return CACHED_TABS.has(path as MainTab) ? path as MainTab : null;
+  }
+
+  private viewKey(url: string): string | null {
+    const path = this.firstPath(url);
+    if (!path || path === 'details' || path === 'auth') return null;
+    return path;
   }
 
   private scrollContainer(): HTMLElement | null {
@@ -64,6 +78,13 @@ export class NavigationService {
     }
   }
 
+  private writeScrollSoon(top: number) {
+    requestAnimationFrame(() => {
+      this.writeScroll(top);
+      requestAnimationFrame(() => this.writeScroll(top));
+    });
+  }
+
   updateContextFromUrl(url: string) {
     const cleanUrl = url.split('?')[0];
     const queryParams = new URLSearchParams(url.includes('?') ? url.split('?')[1] : '');
@@ -75,12 +96,12 @@ export class NavigationService {
       this.currentTab.set('deals');
     } else if (cleanUrl.startsWith('/search')) {
       this.currentTab.set('search');
-    } else if (cleanUrl.startsWith('/waitlist')) {
+    } else if (cleanUrl.startsWith('/waitlist') || cleanUrl.startsWith('/owned')) {
       this.currentTab.set('waitlist');
     } else if (cleanUrl.startsWith('/giveaways')) {
       this.currentTab.set('giveaways');
     } else if (cleanUrl.startsWith('/details')) {
-      const fromTab = fromParam === 'wishlist' ? 'waitlist' : fromParam;
+      const fromTab = fromParam === 'wishlist' || fromParam === 'owned' ? 'waitlist' : fromParam;
       if (fromTab && MAIN_TABS.includes(fromTab as MainTab)) {
         this.currentTab.set(fromTab as MainTab);
       }
