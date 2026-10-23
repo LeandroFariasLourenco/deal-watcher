@@ -1,0 +1,74 @@
+<swiper-container
+  #chipSwiper
+  class="chip-swiper"
+  slides-per-view="auto"
+  space-between="10"
+  grab-cursor="true"
+  observer="true"
+  observe-parents="true"
+  speed="420"
+  resistance-ratio="0.65"
+  long-swipes-ratio="0.2"
+  short-swipes="true"
+  prevent-clicks="false"
+  prevent-clicks-propagation="false"
+>
+  @if (loading()) {
+    @for (i of skeletons(); track i) {
+      <swiper-slide class="chip-slide">
+        <div class="chip-tile is-skeleton" aria-hidden="true">
+          <span class="chip-tile-icon"></span>
+          <span class="chip-tile-line"></span>
+          <span class="chip-tile-line is-short"></span>
+        </div>
+      </swiper-slide>
+    }
+  } @else {
+    @for (item of items(); track item.id) {
+      <swiper-slide class="chip-slide" (click)="onSelect(item, $event)">
+        @if (item.href) {
+          <a
+            class="chip-tile"
+            [class.is-active]="item.active"
+            [class.is-disabled]="item.disabled"
+            [href]="item.href"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="chip-tile-icon">
+              @if (item.shopId != null || item.shopName) {
+                <app-store-logo [shopId]="item.shopId" [shopName]="item.shopName" [size]="28" />
+              } @else if (item.icon) {
+                <mat-icon [class.is-spinning]="item.spinning">{{ item.icon }}</mat-icon>
+              }
+            </span>
+            <span class="chip-tile-name">{{ item.label }}</span>
+            @if (item.caption) {
+              <span class="chip-tile-caption">{{ item.caption }}</span>
+            }
+          </a>
+        } @else {
+          <button
+            type="button"
+            class="chip-tile"
+            [class.is-active]="item.active"
+            [disabled]="item.disabled"
+            (click)="onSelect(item, $event)"
+          >
+            <span class="chip-tile-icon">
+              @if (item.shopId != null || item.shopName) {
+                <app-store-logo [shopId]="item.shopId" [shopName]="item.shopName" [size]="28" />
+              } @else if (item.icon) {
+                <mat-icon [class.is-spinning]="item.spinning">{{ item.icon }}</mat-icon>
+              }
+            </span>
+            <span class="chip-tile-name">{{ item.label }}</span>
+            @if (item.caption) {
+              <span class="chip-tile-caption">{{ item.caption }}</span>
+            }
+          </button>
+        }
+      </swiper-slide>
+    }
+  }
+</swiper-container>

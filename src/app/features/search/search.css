@@ -45,6 +45,44 @@
   color: #ffffff;
 }
 
+.search-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 3.5rem 1.25rem;
+  background: #16202d;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+}
+
+.search-idle-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  font-size: 3.5rem;
+  line-height: 1;
+  color: rgba(102, 192, 244, 0.4);
+  overflow: visible;
+}
+
+.search-idle-title {
+  margin: 0.5rem 0 0;
+  color: #ffffff;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.search-idle-copy {
+  margin: 0;
+  max-width: 22rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
 @media (max-width: 639px) {
   .result-card {
     flex-direction: column;

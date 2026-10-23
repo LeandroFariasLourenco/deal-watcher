@@ -30,6 +30,17 @@
   --steam-blue: #1B2838;
   --steam-green: #5C7E10;
   --steam-light-blue: #66C0F4;
+  --page-gutter: 1rem;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --page-gutter: 1.25rem;
+  }
+}
+
+.page-gutter {
+  padding-inline: var(--page-gutter);
 }
 
 body {

@@ -1,0 +1,7 @@
+<app-chip-swiper
+  [items]="tiles()"
+  [loading]="loading()"
+  [skeletonCount]="skeletonCount()"
+  [centerOnClick]="true"
+  (select)="onSelect($event)"
+/>

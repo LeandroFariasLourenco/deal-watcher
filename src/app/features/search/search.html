@@ -1,5 +1,5 @@
 <p-toast position="bottom-center"></p-toast>
-<div class="p-4 space-y-5 pb-2">
+<div class="page-gutter pt-4 pb-2 space-y-5">
   <form (submit)="onSearch(); $event.preventDefault()" class="relative flex items-center">
     <input 
       type="text" 
@@ -36,7 +36,7 @@
   <!-- Search Results (When Active) -->
   @if (results().length > 0) {
     <div class="space-y-3">
-      <div class="flex items-center justify-between px-1">
+      <div class="flex items-center justify-between">
         <h2 class="text-xs font-bold uppercase tracking-wider text-white/60 flex items-center gap-1.5">
           <mat-icon class="!text-sm !w-4 !h-4 text-[#66C0F4]">search</mat-icon>
           <span>Resultados da busca ({{ results().length }})</span>
@@ -45,11 +45,11 @@
           (click)="clearSearch()"
           class="text-[11px] text-[#66C0F4] hover:text-white bg-transparent border-none cursor-pointer flex items-center gap-1"
         >
-          <span>Voltar para Jogos em alta</span>
+          <span>Nova pesquisa</span>
         </button>
       </div>
 
-      <div class="space-y-1 px-1">
+      <div class="space-y-1">
         @for (game of results(); track game.id) {
           <div class="result-card flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px]" [routerLink]="['/details', game.id]" [queryParams]="{ from: 'search' }">
             <div class="game-thumb relative w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
@@ -99,7 +99,7 @@
   }
 
   @if (loading()) {
-    <div class="space-y-1 px-1">
+    <div class="space-y-1">
       @for (i of [1,2,3,4,5]; track i) {
         <div class="flex items-center bg-[#16202D]/50 border-b border-black/10 min-h-[72px] px-1">
           <p-skeleton width="112px" height="72px"></p-skeleton>
@@ -117,50 +117,18 @@
       <mat-icon class="!text-5xl opacity-20">search_off</mat-icon>
       <p class="text-sm font-medium">Nenhum jogo encontrado para "{{ submittedQuery() }}"</p>
       <button (click)="clearSearch()" class="px-3 py-1.5 text-xs text-[#66C0F4] hover:text-white bg-white/5 rounded-lg border border-white/10 cursor-pointer">
-        Ver Jogos em alta
+        Nova pesquisa
       </button>
     </div>
   }
 
-  <!-- Jogos em alta (Loaded right below search bar when opening search) -->
-  @if (results().length === 0 && !loading()) {
-    <section class="space-y-2.5">
-      <div class="flex items-center justify-between px-1">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
-          <mat-icon class="!text-base !w-4 !h-4 text-[#ff4655]">local_fire_department</mat-icon>
-          <span>Jogos em alta</span>
-        </h2>
-        <span class="text-[10px] text-white/40 uppercase font-semibold tracking-wider">Top 10 mais jogados</span>
-      </div>
-
-      @if (loadingTrending()) {
-        <div class="space-y-1 px-1">
-          @for (i of [1,2,3,4,5,6,7,8,9,10]; track i) {
-            <div class="flex items-center bg-[#16202D]/50 border-b border-black/10 min-h-[72px] px-1">
-              <p-skeleton width="112px" height="72px"></p-skeleton>
-              <div class="flex-1 px-3 py-2 space-y-2">
-                <p-skeleton width="60%" height="0.8rem"></p-skeleton>
-                <p-skeleton width="30%" height="0.6rem"></p-skeleton>
-              </div>
-              <div class="shrink-0 flex gap-2 items-center px-2">
-                <p-skeleton width="40px" height="24px"></p-skeleton>
-                <p-skeleton width="50px" height="18px"></p-skeleton>
-              </div>
-            </div>
-          }
-        </div>
-      } @else if (trendingGames().length > 0) {
-        <div class="space-y-1 px-1">
-          @for (deal of trendingGames(); track deal.id; let i = $index) {
-            <app-game-price-card
-              class="trending-cascade-item"
-              [game]="deal"
-              [rank]="i + 1"
-              from="search"
-            />
-          }
-        </div>
-      }
+  @if (!loading() && results().length === 0 && !submittedQuery()) {
+    <section class="search-idle">
+      <mat-icon class="search-idle-icon">search</mat-icon>
+      <h2 class="search-idle-title">Pesquise um jogo</h2>
+      <p class="search-idle-copy">
+        Digite o nome de um título na barra acima para encontrar jogos, ofertas e detalhes.
+      </p>
     </section>
   }
 </div>

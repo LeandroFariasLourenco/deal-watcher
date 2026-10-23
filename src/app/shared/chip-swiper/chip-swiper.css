@@ -1,0 +1,160 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.chip-swiper {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+}
+
+.chip-swiper::part(container),
+.chip-swiper::part(wrapper) {
+  overflow: visible;
+}
+
+.chip-slide,
+.chip-swiper swiper-slide {
+  width: 5.65rem;
+  height: auto;
+}
+
+.chip-swiper swiper-slide {
+  display: flex;
+}
+
+.chip-tile {
+  flex: 1;
+  width: 100%;
+  min-height: 6.35rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.7rem 0.4rem 0.55rem;
+  background: #1b2430;
+  border: 2px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.95rem;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.chip-tile-icon {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111820;
+}
+
+.chip-tile-icon mat-icon {
+  font-size: 1.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.chip-tile-icon mat-icon.is-spinning {
+  animation: chip-spin 0.8s linear infinite;
+}
+
+.chip-tile-icon app-store-logo {
+  display: flex;
+}
+
+.chip-tile-name {
+  max-width: 100%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: #ffffff;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip-tile-caption {
+  font-size: 0.62rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.42);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.chip-tile:hover:not(:disabled):not(.is-disabled) {
+  border-color: rgba(102, 192, 244, 0.4);
+  background: #223140;
+}
+
+.chip-tile:disabled,
+.chip-tile.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.chip-tile.is-active {
+  border-color: #66c0f4;
+  background: #1e2c3c;
+  box-shadow: 0 0 0 1px rgba(102, 192, 244, 0.2), 0 6px 16px rgba(0, 0, 0, 0.22);
+}
+
+.chip-tile.is-active .chip-tile-caption {
+  color: #66c0f4;
+}
+
+.chip-tile.is-skeleton {
+  pointer-events: none;
+  cursor: default;
+}
+
+.chip-tile-line {
+  display: block;
+  width: 3.4rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.chip-tile-line.is-short {
+  width: 2.4rem;
+}
+
+.chip-tile.is-skeleton .chip-tile-icon {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+@keyframes chip-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (min-width: 640px) {
+  .chip-slide,
+  .chip-swiper swiper-slide {
+    width: 6.4rem;
+  }
+
+  .chip-tile {
+    min-height: 6.85rem;
+  }
+
+  .chip-tile-icon {
+    width: 2.55rem;
+    height: 2.55rem;
+  }
+
+  .chip-tile-name {
+    font-size: 0.78rem;
+  }
+}

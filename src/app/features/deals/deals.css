@@ -13,134 +13,12 @@
   width: 100%;
   max-width: 72rem;
   margin-inline: auto;
-  padding-inline: 0.75rem;
+  padding-inline: var(--page-gutter);
 }
 
 @media (min-width: 640px) {
   .deals-page {
     padding-block: 1rem;
-  }
-
-  .deals-centered {
-    padding-inline: 1rem;
-  }
-}
-
-.official-shops-row {
-  display: flex;
-  align-items: stretch;
-  gap: 0.6rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 0.2rem 0.15rem 0.45rem;
-  margin-inline: -0.25rem;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.official-shops-row::-webkit-scrollbar {
-  display: none;
-}
-
-.official-shop {
-  flex: 0 0 auto;
-  width: 5.65rem;
-  min-height: 6.35rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.7rem 0.4rem 0.55rem;
-  background: #1b2430;
-  border: 2px solid rgba(255, 255, 255, 0.07);
-  border-radius: 0.95rem;
-  cursor: pointer;
-  color: inherit;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
-}
-
-.official-shop-icon {
-  width: 2.35rem;
-  height: 2.35rem;
-  border-radius: 0.7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #111820;
-  border: 0;
-}
-
-.official-shop-icon mat-icon {
-  font-size: 1.2rem;
-  width: 1.2rem;
-  height: 1.2rem;
-  color: #ffffff;
-}
-
-.official-shop-icon app-store-logo {
-  display: flex;
-}
-
-.official-shop-name {
-  max-width: 100%;
-  font-size: 0.72rem;
-  font-weight: 700;
-  line-height: 1.15;
-  color: #ffffff;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.official-shop-deals {
-  font-size: 0.62rem;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.42);
-  text-align: center;
-  white-space: nowrap;
-}
-
-.official-shop:hover:not(:disabled) {
-  border-color: rgba(102, 192, 244, 0.4);
-  background: #223140;
-}
-
-.official-shop:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.official-shop-active {
-  border-color: #66c0f4;
-  background: #1e2c3c;
-  box-shadow: 0 0 0 1px rgba(102, 192, 244, 0.2), 0 6px 16px rgba(0, 0, 0, 0.22);
-}
-
-.official-shop-active .official-shop-deals {
-  color: #66c0f4;
-}
-
-.official-shop-skeleton {
-  pointer-events: none;
-  cursor: default;
-}
-
-@media (min-width: 640px) {
-  .official-shop {
-    width: 6.4rem;
-    min-height: 6.85rem;
-  }
-
-  .official-shop-icon {
-    width: 2.55rem;
-    height: 2.55rem;
-  }
-
-  .official-shop-name {
-    font-size: 0.78rem;
   }
 }
 
@@ -189,7 +67,7 @@
   display: block;
   width: 100%;
   overflow: hidden;
-  padding-inline: 0.75rem;
+  padding-inline: var(--page-gutter);
   box-sizing: border-box;
 }
 
@@ -213,12 +91,6 @@
   width: 100%;
 }
 
-@media (min-width: 640px) {
-  .deals-swiper {
-    padding-inline: 1rem;
-  }
-}
-
 .featured-skeleton {
   overflow: hidden;
   border-radius: 0.9rem;
@@ -239,7 +111,7 @@
   }
 
   .featured-row {
-    margin-inline: -1rem;
-    padding-inline: 1rem;
+    margin-inline: calc(var(--page-gutter) * -1);
+    padding-inline: var(--page-gutter);
   }
 }

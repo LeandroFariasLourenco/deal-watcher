@@ -6,48 +6,16 @@
       <span>Lojas Oficiais</span>
     </h2>
 
-    @if (loadingShops()) {
-      <div class="official-shops-row">
-        @for (i of [1,2,3,4,5,6,7,8,9]; track i) {
-          <div class="official-shop official-shop-skeleton">
-            <p-skeleton shape="circle" size="2.35rem"></p-skeleton>
-            <p-skeleton width="3.4rem" height="0.7rem"></p-skeleton>
-            <p-skeleton width="3rem" height="0.55rem"></p-skeleton>
-          </div>
-        }
-      </div>
-    } @else {
-      <div class="official-shops-row">
-        <button
-          type="button"
-          (click)="clearShops()"
-          class="official-shop"
-          [class.official-shop-active]="isAllShopsSelected()"
-          [disabled]="isAllShopsDisabled()"
-        >
-          <span class="official-shop-icon">
-            <mat-icon>apps</mat-icon>
-          </span>
-          <span class="official-shop-name">Todas</span>
-          <span class="official-shop-deals">{{ formatDealCount(totalDeals()) }} ofertas</span>
-        </button>
-        @for (shop of shops(); track shop.id) {
-          <button
-            type="button"
-            (click)="toggleShop(shop.id)"
-            class="official-shop"
-            [class.official-shop-active]="isShopSelected(shop.id)"
-            [disabled]="isShopDisabled(shop.id)"
-          >
-            <span class="official-shop-icon">
-              <app-store-logo [shopId]="shop.id" [shopName]="shop.name" [size]="28" />
-            </span>
-            <span class="official-shop-name">{{ shop.name }}</span>
-            <span class="official-shop-deals">{{ formatDealCount(shop.deals) }} ofertas</span>
-          </button>
-        }
-      </div>
-    }
+    <app-shop-swiper
+      [shops]="shopSwiperItems()"
+      [selectedId]="selectedShopId()"
+      [showAll]="true"
+      [allCaption]="allShopsCaption()"
+      [loading]="loadingShops()"
+      [skeletonCount]="9"
+      [busy]="shopsLocked()"
+      (select)="onShopSelect($event)"
+    />
   </section>
 
   @for (feed of feeds; track feed.id) {

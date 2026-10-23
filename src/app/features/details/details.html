@@ -1,15 +1,6 @@
 <p-toast></p-toast>
 
 <div class="pb-2">
-  <div class="sticky top-0 z-40 bg-[#16202D]/95 backdrop-blur-md border-b border-black/30 px-4 py-2.5 flex items-center justify-between">
-    <button 
-      (click)="nav.goBack()" 
-      class="back-button inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/30 hover:bg-black/50 text-[#66C0F4] hover:text-white text-xs font-semibold border border-white/10 transition-colors cursor-pointer leading-none"
-    >
-      <mat-icon class="!text-base !w-4 !h-4 !leading-none !flex !items-center !justify-center overflow-hidden shrink-0">arrow_back</mat-icon>
-      <span class="leading-none">Voltar para {{ nav.getTabLabel(nav.currentTab()) }}</span>
-    </button>
-  </div>
   @if (error(); as err) {
     <div class="p-8 text-center space-y-4">
       <mat-icon class="!text-6xl text-white/20">error_outline</mat-icon>
@@ -30,7 +21,7 @@
       }
       <div class="absolute inset-0 bg-gradient-to-t from-[#171A21] via-[#171A21]/75 to-transparent"></div>
 
-      <div class="relative z-10 w-full p-4 sm:p-6 flex items-end gap-4">
+      <div class="relative z-10 w-full page-gutter py-4 sm:py-6 flex items-end gap-4">
         @if (boxartUrl()) {
           <div class="w-20 sm:w-28 shrink-0 rounded-lg overflow-hidden border border-white/15 shadow-lg bg-black/50">
             <img 
@@ -45,7 +36,7 @@
         <div class="flex-1 min-w-0">
           <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
             <span class="inline-flex items-center justify-center px-2 py-0.5 rounded bg-[#66C0F4]/20 border border-[#66C0F4]/40 text-[#66C0F4] text-[10px] font-bold uppercase tracking-wider leading-none">
-              {{ info.type || 'Jogo' }}
+              {{ formatGameType(info.type) }}
             </span>
             @if (info.appid) {
               <span class="inline-flex items-center justify-center px-2 py-0.5 rounded bg-white/10 text-white/80 text-[10px] font-semibold tabular-nums leading-none">
@@ -73,7 +64,7 @@
       <div class="relative min-h-[240px] w-full bg-[#0e141b] overflow-hidden flex items-end">
         <p-skeleton width="100%" height="100%"></p-skeleton>
         <div class="absolute inset-0 bg-gradient-to-t from-[#171A21] via-[#171A21]/80 to-transparent"></div>
-        <div class="relative z-10 w-full p-4 sm:p-6 flex items-end gap-4">
+        <div class="relative z-10 w-full page-gutter py-4 sm:py-6 flex items-end gap-4">
           <p-skeleton width="5.5rem" height="7.5rem" borderRadius="8px"></p-skeleton>
           <div class="flex-1 min-w-0 space-y-2">
             <p-skeleton width="4.5rem" height="1rem" borderRadius="6px"></p-skeleton>
@@ -84,14 +75,14 @@
       </div>
     }
 
-    <div class="p-4 sm:p-6 space-y-6">
+    <div class="page-gutter py-4 sm:py-6 space-y-6">
       @if (gameInfo(); as info) {
-      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      <div class="detail-actions">
         <button 
           type="button"
           [disabled]="adding()"
           (click)="addToWaitlist()"
-          class="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          class="detail-action min-h-[44px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           [class]="isAlreadyInWaitlist()
             ? 'bg-[#233827] border border-[#4c6b22] text-[#beee11]'
             : 'bg-[#4c6b22] hover:bg-[#5a7f29] active:scale-[0.99] text-white border border-[#75a634]/40'"
@@ -112,7 +103,7 @@
           type="button"
           [disabled]="owning()"
           (click)="toggleOwned()"
-          class="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          class="detail-action min-h-[44px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           [class]="isOwned()
             ? 'bg-[#2a3318] border border-[#beee11]/40 text-[#beee11]'
             : 'bg-[#1B2838] hover:bg-[#243447] active:scale-[0.99] text-white border border-white/15'"
@@ -134,107 +125,13 @@
             [href]="info.urls.game" 
             target="_blank" 
             rel="noopener noreferrer"
-            class="min-h-[44px] py-2.5 px-4 rounded-xl bg-[#1B2838] hover:bg-[#243447] active:scale-[0.99] border border-[#66C0F4]/40 text-[#66C0F4] hover:text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all no-underline shrink-0 shadow-sm"
+            class="detail-action min-h-[44px] py-2.5 px-4 rounded-xl bg-[#1B2838] hover:bg-[#243447] active:scale-[0.99] border border-[#66C0F4]/40 text-[#66C0F4] hover:text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all no-underline shadow-sm"
           >
             <mat-icon class="!text-[20px] !w-5 !h-5 !leading-none overflow-visible shrink-0 text-[#66C0F4]">open_in_new</mat-icon>
             <span class="leading-normal">Página no ITAD</span>
           </a>
         }
       </div>
-
-      <section class="space-y-3" [appDeferLoad]="uuid()" (appeared)="reveal('overview')">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
-          <mat-icon class="!text-sm !w-4 !h-4 text-[#beee11]">payments</mat-icon>
-          <span>Resumo de Preços</span>
-        </h2>
-
-        @if (loadingOverview()) {
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            @for (i of [1,2,3]; track i) {
-              <p-card styleClass="detail-meta-card">
-                <div class="space-y-2">
-                  <p-skeleton width="40%" height="0.7rem" borderRadius="6px"></p-skeleton>
-                  <p-skeleton width="70%" height="1.1rem" borderRadius="6px"></p-skeleton>
-                  <p-skeleton width="55%" height="0.8rem" borderRadius="6px"></p-skeleton>
-                </div>
-              </p-card>
-            }
-          </div>
-        } @else {
-          <div [class]="overviewBundled() > 0 ? 'grid grid-cols-1 sm:grid-cols-3 gap-2.5' : 'grid grid-cols-1 sm:grid-cols-2 gap-2.5'">
-            <p-card styleClass="detail-meta-card">
-              <div class="flex flex-col gap-1.5 min-h-[5.5rem]">
-                <span class="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Melhor preço atual</span>
-                @if (overviewCurrent(); as current) {
-                  <div class="flex items-center gap-1.5 text-white">
-                    <app-store-logo [shopId]="current.shop?.id" [shopName]="current.shop?.name" [size]="16" />
-                    <span class="text-xs font-bold truncate">{{ current.shop?.name }}</span>
-                  </div>
-                  <div class="flex flex-wrap items-baseline gap-1.5">
-                    @if (current.cut > 0) {
-                      <span class="bg-[#4c6b22] text-[#beee11] text-[10px] px-1.5 py-0.5 rounded font-bold">-{{ current.cut }}%</span>
-                      <span class="text-xs text-white/45 line-through tabular-nums">{{ formatPrice(current.regular.amount, current.regular.currency) }}</span>
-                    }
-                    <span class="text-base font-bold text-[#beee11] tabular-nums">{{ formatPrice(current.price.amount, current.price.currency) }}</span>
-                  </div>
-                  @if (isOverviewHistoryLow()) {
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-[#beee11]">Menor preço histórico</span>
-                  }
-                  @if (current.voucher) {
-                    <span class="text-[10px] text-amber-300 font-bold">Cupom: {{ current.voucher }}</span>
-                  }
-                  @if (current.url) {
-                    <a
-                      [href]="current.url"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="mt-auto pt-1 text-[11px] font-bold text-[#66C0F4] hover:text-white no-underline inline-flex items-center gap-1"
-                    >
-                      <mat-icon class="!text-sm !w-4 !h-4">open_in_new</mat-icon>
-                      Abrir oferta
-                    </a>
-                  }
-                } @else {
-                  <p class="text-xs text-white/45 m-0">Sem oferta nas lojas suportadas.</p>
-                }
-              </div>
-            </p-card>
-
-            <p-card styleClass="detail-meta-card">
-              <div class="flex flex-col gap-1.5 min-h-[5.5rem]">
-                <span class="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Menor histórico</span>
-                @if (overviewLowest(); as lowest) {
-                  <div class="flex items-center gap-1.5 text-white">
-                    <app-store-logo [shopId]="lowest.shop?.id" [shopName]="lowest.shop?.name" [size]="16" />
-                    <span class="text-xs font-bold truncate">{{ lowest.shop?.name }}</span>
-                  </div>
-                  <div class="flex flex-wrap items-baseline gap-1.5">
-                    @if (lowest.cut > 0) {
-                      <span class="bg-[#4c6b22] text-[#beee11] text-[10px] px-1.5 py-0.5 rounded font-bold">-{{ lowest.cut }}%</span>
-                    }
-                    <span class="text-base font-bold text-[#66C0F4] tabular-nums">{{ formatPrice(lowest.price.amount, lowest.price.currency) }}</span>
-                  </div>
-                  <span class="text-[11px] text-white/45">{{ formatDateTime(lowest.timestamp) }}</span>
-                } @else {
-                  <p class="text-xs text-white/45 m-0">Histórico indisponível.</p>
-                }
-              </div>
-            </p-card>
-
-            @if (overviewBundled() > 0) {
-              <p-card styleClass="detail-meta-card">
-                <div class="flex flex-col gap-1.5 min-h-[5.5rem]">
-                  <span class="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Bundles ativos</span>
-                  <span class="text-xl font-bold text-white tabular-nums">{{ overviewBundled() }}</span>
-                  <p class="text-[11px] text-white/45 m-0">
-                    {{ overviewBundled() === 1 ? 'bundle inclui este jogo' : 'bundles incluem este jogo' }}
-                  </p>
-                </div>
-              </p-card>
-            }
-          </div>
-        }
-      </section>
 
       @if (gameTags().length > 0) {
         <section class="space-y-2">
@@ -256,81 +153,34 @@
           <span>Ficha Técnica</span>
         </h2>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-          <p-card styleClass="detail-meta-card">
-            <div class="flex flex-col gap-1">
-              <span class="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Lançamento</span>
-              <span class="text-xs sm:text-sm font-bold text-white tabular-nums">{{ formatDate(info.releaseDate) }}</span>
-            </div>
-          </p-card>
-
-          <p-card styleClass="detail-meta-card">
-            <div class="flex flex-col gap-1">
-              <span class="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Tipo</span>
-              <span class="text-xs sm:text-sm font-bold text-white">{{ info.type || 'Não especificado' }}</span>
-            </div>
-          </p-card>
-
-          <p-card styleClass="detail-meta-card">
-            <div class="flex flex-col gap-1">
-              <span class="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Steam AppID</span>
-              <span class="text-xs sm:text-sm font-bold text-[#66C0F4] tabular-nums">{{ info.appid || 'N/A' }}</span>
-            </div>
-          </p-card>
-
-          <p-card styleClass="detail-meta-card">
-            <div class="flex flex-col gap-1">
-              <span class="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Desenvolvedores</span>
-              <div class="text-xs font-semibold text-white">
-                @if (gameDevelopers().length > 0) {
-                  @for (dev of gameDevelopers(); track dev.id; let last = $last) {
-                    <span>{{ dev.name }} (#{{ dev.id }}){{ !last ? ', ' : '' }}</span>
-                  }
-                } @else {
-                  <span class="text-white/40">Não informado</span>
-                }
-              </div>
-            </div>
-          </p-card>
-
-          <p-card styleClass="detail-meta-card">
-            <div class="flex flex-col gap-1">
-              <span class="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Publicadoras</span>
-              <div class="text-xs font-semibold text-white">
-                @if (gamePublishers().length > 0) {
-                  @for (pub of gamePublishers(); track pub.id; let last = $last) {
-                    <span>{{ pub.name }} (#{{ pub.id }}){{ !last ? ', ' : '' }}</span>
-                  }
-                } @else {
-                  <span class="text-white/40">Não informado</span>
-                }
-              </div>
-            </div>
-          </p-card>
-
-          <p-card styleClass="detail-meta-card">
-            <div class="flex flex-col gap-1">
-              <span class="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Recursos</span>
-              <div class="flex flex-wrap gap-1.5 mt-0.5 text-[11px]">
-                <span [class]="info.achievements ? 'text-[#beee11] font-semibold' : 'text-white/40'">
-                  Conquistas: {{ info.achievements ? 'Sim' : 'Não' }}
-                </span>
-                <span class="text-white/20">·</span>
-                <span [class]="info.tradingCards ? 'text-[#beee11] font-semibold' : 'text-white/40'">
-                  Cartas: {{ info.tradingCards ? 'Sim' : 'Não' }}
-                </span>
-                <span class="text-white/20">·</span>
-                <span [class]="info.earlyAccess ? 'text-amber-300 font-semibold' : 'text-white/40'">
-                  Early Access: {{ info.earlyAccess ? 'Sim' : 'Não' }}
-                </span>
-                <span class="text-white/20">·</span>
-                <span [class]="info.mature ? 'text-red-300 font-semibold' : 'text-white/40'">
-                  Adulto: {{ info.mature ? 'Sim' : 'Não' }}
-                </span>
-              </div>
-            </div>
-          </p-card>
-        </div>
+        <p-card styleClass="detail-meta-card">
+          <div class="spec-sheet">
+            <p class="spec-line">
+              <span class="spec-label">Lançamento</span>
+              <span class="spec-value tabular-nums">{{ formatDate(info.releaseDate) }}</span>
+            </p>
+            <p class="spec-line">
+              <span class="spec-label">Tipo</span>
+              <span class="spec-value">{{ formatGameType(info.type) }}</span>
+            </p>
+            <p class="spec-line">
+              <span class="spec-label">Steam AppID</span>
+              <span class="spec-value spec-appid tabular-nums">{{ info.appid || 'N/A' }}</span>
+            </p>
+            <p class="spec-line">
+              <span class="spec-label">Recursos</span>
+              <span class="spec-value spec-features">{{ formatSpecFeatures(info) }}</span>
+            </p>
+            <p class="spec-line spec-line-wide">
+              <span class="spec-label">Desenvolvedores</span>
+              <span class="spec-value">{{ formatCompanyNames(gameDevelopers()) }}</span>
+            </p>
+            <p class="spec-line spec-line-wide">
+              <span class="spec-label">Publicadoras</span>
+              <span class="spec-value">{{ formatCompanyNames(gamePublishers()) }}</span>
+            </p>
+          </div>
+        </p-card>
       </section>
 
       @if (gameStats() || gamePlayers()) {
@@ -432,11 +282,7 @@
         </section>
         <section class="space-y-3">
           <p-skeleton width="7rem" height="0.75rem" borderRadius="6px"></p-skeleton>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            @for (i of [1,2,3,4,5,6]; track i) {
-              <p-skeleton width="100%" height="4.5rem" borderRadius="10px"></p-skeleton>
-            }
-          </div>
+          <p-skeleton width="100%" height="8.5rem" borderRadius="10px"></p-skeleton>
         </section>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <p-skeleton width="100%" height="7.5rem" borderRadius="10px"></p-skeleton>
@@ -584,40 +430,13 @@
               <p-card class="block" styleClass="deal-price-card">
                 <div class="deal-price-body">
                   <div class="flex items-start justify-between gap-3">
-                    <div class="space-y-1 min-w-0">
-                      <div class="flex flex-wrap items-center gap-2">
-                        <span class="inline-flex items-center gap-1.5 text-base font-bold text-white">
-                          <app-store-logo [shopId]="deal.shop?.id" [shopName]="deal.shop?.name" [size]="18" />
-                          {{ deal.shop?.name }}
+                    <div class="min-w-0">
+                      <div class="flex flex-wrap items-center gap-2 min-w-0">
+                        <span class="inline-flex items-center gap-1.5 min-w-0 text-base font-bold text-white">
+                          <app-store-logo class="shrink-0" [shopId]="deal.shop?.id" [shopName]="deal.shop?.name" [size]="18" />
+                          <span class="truncate">{{ deal.shop?.name }}</span>
                         </span>
-                        <span class="text-[10px] text-white/40 font-mono">ID #{{ deal.shop?.id }}</span>
-                        @if (deal.flag) {
-                          <span class="px-1.5 py-0.5 rounded bg-[#66C0F4]/20 border border-[#66C0F4]/40 text-[#66C0F4] text-[10px] font-bold">
-                            {{ formatFlag(deal.flag) }}
-                          </span>
-                        }
-                      </div>
-
-                      <div class="flex flex-wrap items-center gap-1.5 text-[11px] text-white/60">
-                        <span class="px-1.5 py-0.5 rounded bg-black/30 border border-white/10">
-                          DRM: {{ getDrmNames(deal.drm).join(', ') }}
-                        </span>
-                        @if (getPlatformNames(deal.platforms).length > 0) {
-                          <span class="px-1.5 py-0.5 rounded bg-black/30 border border-white/10">
-                            Plataformas: {{ getPlatformNames(deal.platforms).join(', ') }}
-                          </span>
-                        }
-                        @if (deal.voucher) {
-                          <span class="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold">
-                            Cupom: {{ deal.voucher }}
-                          </span>
-                        }
-                        @if (timeService.getCountdown(deal.expiry); as countdown) {
-                          <span class="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/30 text-[#66C0F4] font-bold flex items-center gap-1">
-                            <mat-icon class="!text-[10px] !w-3 !h-3">schedule</mat-icon>
-                            {{ countdown }}
-                          </span>
-                        }
+                        <span class="text-[10px] text-white/40 font-mono shrink-0">ID #{{ deal.shop?.id }}</span>
                       </div>
                     </div>
 
@@ -642,6 +461,21 @@
                     </div>
                   </div>
 
+                  @if (deal.flag || deal.voucher) {
+                    <div class="deal-price-chips">
+                      @if (deal.flag) {
+                        <span class="deal-price-chip deal-price-chip-flag">
+                          {{ formatFlag(deal.flag) }}
+                        </span>
+                      }
+                      @if (deal.voucher) {
+                        <span class="deal-price-chip deal-price-chip-voucher">
+                          Cupom: {{ deal.voucher }}
+                        </span>
+                      }
+                    </div>
+                  }
+
                   <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-[11px]">
                     <div>
                       <span class="block text-white/40 text-[10px] uppercase">Menor na Loja</span>
@@ -655,31 +489,43 @@
                         {{ deal.historyLow ? formatPrice(deal.historyLow.amount, deal.historyLow.currency) : '-' }}
                       </span>
                     </div>
-                    <div>
-                      <span class="block text-white/40 text-[10px] uppercase">Registrado em</span>
-                      <span class="font-semibold text-white/80 tabular-nums">
-                        {{ formatDateTime(deal.timestamp) || '-' }}
-                      </span>
-                    </div>
-                    <div>
-                      <span class="block text-white/40 text-[10px] uppercase">Expira em</span>
-                      <span class="font-semibold text-amber-300/90 tabular-nums">
-                        {{ formatDateTime(deal.expiry) || 'Sem data limite' }}
-                      </span>
-                    </div>
+                    @if (deal.cut > 0) {
+                      <div>
+                        <span class="block text-white/40 text-[10px] uppercase">Registrado em</span>
+                        <span class="font-semibold text-white/80 tabular-nums">
+                          {{ formatDateTime(deal.timestamp) || '-' }}
+                        </span>
+                      </div>
+                      <div>
+                        <span class="block text-white/40 text-[10px] uppercase">Expira em</span>
+                        <span class="font-semibold text-amber-300/90 tabular-nums">
+                          {{ formatDateTime(deal.expiry) || 'Sem data limite' }}
+                        </span>
+                      </div>
+                    }
                   </div>
 
-                  @if (deal.url) {
-                    <div class="pt-1 flex justify-end">
-                      <a 
-                        [href]="deal.url" 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        class="w-full px-4 py-2 rounded-lg bg-[#66C0F4]/15 hover:bg-[#66C0F4]/25 border border-[#66C0F4]/40 text-[#66C0F4] hover:text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all no-underline"
-                      >
-                        <mat-icon class="!text-sm !w-4 !h-4">shopping_cart</mat-icon>
-                        <span>Ir para {{ deal.shop?.name }}</span>
-                      </a>
+                  @if (deal.url || (deal.cut > 0 && timeService.getCountdown(deal.expiry))) {
+                    <div class="deal-price-buy">
+                      @if (deal.cut > 0) {
+                        @if (timeService.getCountdown(deal.expiry); as countdown) {
+                          <p class="deal-price-countdown">
+                            <mat-icon>schedule</mat-icon>
+                            <span>{{ countdown }}</span>
+                          </p>
+                        }
+                      }
+                      @if (deal.url) {
+                        <a
+                          [href]="deal.url"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="w-full px-4 py-2 rounded-lg bg-[#66C0F4]/15 hover:bg-[#66C0F4]/25 border border-[#66C0F4]/40 text-[#66C0F4] hover:text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all no-underline"
+                        >
+                          <mat-icon class="!text-sm !w-4 !h-4">shopping_cart</mat-icon>
+                          <span>Comprar</span>
+                        </a>
+                      }
                     </div>
                   }
                 </div>
@@ -708,42 +554,18 @@
 
         @if (loadingHistory()) {
           <div class="space-y-3">
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              @for (i of [1,2,3,4]; track i) {
-                <p-skeleton width="100%" height="3.5rem" borderRadius="10px"></p-skeleton>
-              }
-            </div>
+            <app-shop-swiper [loading]="true" [skeletonCount]="6" [showAll]="false" />
             <div class="rounded-xl bg-[#1B2838]/40 border border-white/10 p-4">
               <p-skeleton width="100%" height="14rem" borderRadius="10px"></p-skeleton>
             </div>
           </div>
         } @else if (historyShops().length > 0) {
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            @for (shop of historyShops(); track shop.id) {
-              <p-card 
-                (click)="selectHistoryShop(shop.id)"
-                [styleClass]="selectedHistoryShop() === shop.id ? 'store-card store-card-active' : 'store-card'"
-              >
-                <div class="store-card-inner">
-                  <span class="store-active-bar"></span>
-                  <div class="store-icon-box">
-                    <app-store-logo [shopId]="shop.id" [shopName]="shop.name" [size]="18" />
-                  </div>
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between gap-1">
-                      <h3 class="text-xs font-bold text-white truncate">{{ shop.name }}</h3>
-                      @if (selectedHistoryShop() === shop.id) {
-                        <mat-icon class="store-check-icon">check_circle</mat-icon>
-                      }
-                    </div>
-                    <p class="text-[10px] text-white/50 truncate mt-0.5 tabular-nums">
-                      {{ shop.count }} {{ shop.count === 1 ? 'registro' : 'registros' }}
-                    </p>
-                  </div>
-                </div>
-              </p-card>
-            }
-          </div>
+          <app-shop-swiper
+            [shops]="historyShopTiles()"
+            [selectedId]="selectedHistoryShop()"
+            [showAll]="false"
+            (select)="selectHistoryShop($event)"
+          />
 
           @if (chartData()) {
             <p-card styleClass="detail-meta-card">
@@ -769,15 +591,10 @@
       <div class="steam-defer-slot" [appDeferLoad]="uuid()" (appeared)="reveal('news')">
         @if (loadingSteamNews() || steamNews().length > 0) {
         <section class="space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
-              <mat-icon class="!text-base !w-4 !h-4 text-[#66C0F4]">newspaper</mat-icon>
-              <span>Notícias da Steam</span>
-            </h2>
-            @if (!loadingSteamNews() && steamNews().length > 0) {
-              <span class="text-xs text-white/45 font-semibold">{{ steamNews().length }} {{ steamNews().length === 1 ? 'item' : 'itens' }}</span>
-            }
-          </div>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+            <mat-icon class="!text-base !w-4 !h-4 text-[#66C0F4]">newspaper</mat-icon>
+            <span>Notícias da Steam</span>
+          </h2>
 
           @if (loadingSteamNews()) {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">

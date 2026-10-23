@@ -1,4 +1,4 @@
-import { afterNextRender, Component, ElementRef, inject, Injector, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
@@ -11,12 +11,8 @@ import { OwnedGamesService } from '../../services/owned-games';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { SearchStateService } from '../../services/search-state';
-import { APP_COUNTRY, DEFAULT_SHOP_IDS } from '../../shared/constants';
 import { ItadApiService } from '../../services/itad-api';
-import { DealItem } from '../../services/deals-state';
-import { GamePriceCard } from '../../shared/game-price-card/game-price-card';
 import { ImgShimmerDirective } from '../../shared/img-shimmer';
-import { animate, stagger } from 'motion';
 
 @Component({
   selector: 'app-search',
@@ -30,7 +26,6 @@ import { animate, stagger } from 'motion';
     RouterLink,
     MatIconModule,
     ToastModule,
-    GamePriceCard,
     ImgShimmerDirective
   ],
   providers: [MessageService],
@@ -43,9 +38,7 @@ export class Search implements OnInit {
   readonly owned = inject(OwnedGamesService);
   private messageService = inject(MessageService);
   private searchState = inject(SearchStateService);
-  private el = inject(ElementRef);
-  private injector = inject(Injector);
-  
+
   searchControl = new FormControl('', { nonNullable: true });
   results = signal<any[]>([]);
   loading = signal(false);
@@ -54,83 +47,12 @@ export class Search implements OnInit {
   /** Bumped on each search or clear so a late response cannot restore results. */
   private searchSeq = 0;
 
-  trendingGames = signal<DealItem[]>([]);
-  loadingTrending = signal(false);
-
   ngOnInit() {
     if (this.searchState.hasSearched()) {
       this.searchControl.setValue(this.searchState.query());
       this.results.set(this.searchState.results());
       this.submittedQuery.set(this.searchState.query());
     }
-    this.loadTrendingGames();
-  }
-
-  loadTrendingGames() {
-    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-    try {
-      const cachedStr = localStorage.getItem('trending_games_cache_v1');
-      if (cachedStr) {
-        const cached = JSON.parse(cachedStr);
-        if (
-          cached && 
-          typeof cached.timestamp === 'number' && 
-          (Date.now() - cached.timestamp < ONE_DAY_MS) && 
-          Array.isArray(cached.data) && 
-          cached.data.length > 0 &&
-          typeof cached.data[0]?.type === 'string'
-        ) {
-          this.trendingGames.set(cached.data);
-          this.loadingTrending.set(false);
-          this.triggerCascadeAnimation();
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('Error reading trending games cache from localStorage', e);
-    }
-
-    this.loadingTrending.set(true);
-    this.itadApi.getDeals(APP_COUNTRY, 0, 10, DEFAULT_SHOP_IDS, 'steam-players').subscribe({
-      next: (data) => {
-        const rawList = Array.isArray(data?.list) ? data.list : (Array.isArray(data) ? data : []);
-        const items = rawList.slice(0, 10).map((item: any) => ({
-          id: item.id,
-          title: item.title,
-          type: item.type,
-          shop: item.deal?.shop || item.shop || { id: 0, name: 'Loja Oficial' },
-          price: item.deal?.price || item.price || { amount: 0, currency: 'BRL' },
-          regular: item.deal?.regular || item.regular || { amount: 0, currency: 'BRL' },
-          cut: item.deal?.cut ?? item.cut ?? 0,
-          assets: item.assets || {},
-          expiry: item.deal?.expiry || item.expiry
-        }));
-        this.trendingGames.set(items);
-        this.loadingTrending.set(false);
-        try {
-          localStorage.setItem('trending_games_cache_v1', JSON.stringify({
-            timestamp: Date.now(),
-            data: items
-          }));
-        } catch (e) {
-          console.warn('Error saving trending games to localStorage', e);
-        }
-        this.triggerCascadeAnimation();
-      },
-      error: () => this.loadingTrending.set(false)
-    });
-  }
-
-  triggerCascadeAnimation() {
-    afterNextRender(() => {
-      const items = this.el.nativeElement.querySelectorAll('.trending-cascade-item');
-      if (!items || items.length === 0) return;
-      animate(
-        items,
-        { opacity: [0, 1], y: [16, 0] },
-        { delay: stagger(0.06), duration: 0.42, ease: 'easeOut' }
-      );
-    }, { injector: this.injector });
   }
 
   /** Visible while the field has text or a search is still on screen. */
@@ -179,7 +101,6 @@ export class Search implements OnInit {
     this.submittedQuery.set('');
     this.loading.set(false);
     this.searchState.clear();
-    this.triggerCascadeAnimation();
   }
 
   async addToWatchlist(game: any, event: Event) {

@@ -45,6 +45,7 @@ export class Waitlist {
   ownedLoading = computed(() => this.owned.loading() || !this.owned.hydrated());
   ownedRecent = this.owned.recent;
   leavingIds = signal<Set<string>>(new Set());
+  private readonly leaveDurationMs = 320;
 
   connect() {
     void this.auth.login('/waitlist');
@@ -132,10 +133,16 @@ export class Waitlist {
   async removeGame(uuid: string, event: Event) {
     event.stopPropagation();
     event.preventDefault();
+    if (this.isLeaving(uuid)) return;
+
+    this.beginLeaving(uuid);
     try {
+      await this.waitForLeaveAnimation();
       await this.waitlist.remove(uuid);
     } catch (e) {
       console.error('Failed to remove game from ITAD waitlist', e);
+    } finally {
+      this.endLeaving(uuid);
     }
   }
 
@@ -148,15 +155,11 @@ export class Waitlist {
     event.preventDefault();
     if (this.owned.isOwned(game.id) || this.isLeaving(game.id)) return;
 
-    this.leavingIds.update(current => {
-      const next = new Set(current);
-      next.add(game.id);
-      return next;
-    });
+    this.beginLeaving(game.id);
 
     try {
       await this.owned.add(game);
-      await new Promise(resolve => setTimeout(resolve, 320));
+      await this.waitForLeaveAnimation();
       await this.waitlist.remove(game.id);
     } catch (e: any) {
       console.error('Failed to mark waitlist game as owned', e);
@@ -177,18 +180,18 @@ export class Waitlist {
         life: 5000,
       });
     } finally {
-      this.leavingIds.update(current => {
-        const next = new Set(current);
-        next.delete(game.id);
-        return next;
-      });
+      this.endLeaving(game.id);
     }
   }
 
   async unmarkOwned(game: ITADIgnoredGame, event: Event) {
     event.stopPropagation();
     event.preventDefault();
+    if (this.isLeaving(game.id)) return;
+
+    this.beginLeaving(game.id);
     try {
+      await this.waitForLeaveAnimation();
       await this.owned.remove(game.id);
       await this.restoreWaitlist.afterRemovedFromLibrary(game);
     } catch (e: any) {
@@ -209,7 +212,29 @@ export class Waitlist {
         detail: 'Não foi possível remover o jogo da biblioteca.',
         life: 5000,
       });
+    } finally {
+      this.endLeaving(game.id);
     }
+  }
+
+  private beginLeaving(id: string) {
+    this.leavingIds.update(current => {
+      const next = new Set(current);
+      next.add(id);
+      return next;
+    });
+  }
+
+  private endLeaving(id: string) {
+    this.leavingIds.update(current => {
+      const next = new Set(current);
+      next.delete(id);
+      return next;
+    });
+  }
+
+  private waitForLeaveAnimation() {
+    return new Promise<void>(resolve => setTimeout(resolve, this.leaveDurationMs));
   }
 
   banner(game: { assets?: { banner300?: string; banner400?: string; boxart?: string } }): string | null {

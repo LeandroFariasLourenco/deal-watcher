@@ -14,9 +14,10 @@ import { ChartModule } from 'primeng/chart';
 import { MatIconModule } from '@angular/material/icon';
 import { APP_COUNTRY, DEFAULT_SHOP_IDS, ALLOWED_STORE_CONFIG } from '../../shared/constants';
 import { StoreLogo } from '../../shared/store-logo/store-logo';
+import { ShopSwiper, ShopSwiperItem } from '../../shared/shop-swiper/shop-swiper';
 import { ImgShimmerDirective } from '../../shared/img-shimmer';
 import { DeferLoadDirective } from '../../shared/defer-load';
-import { ITADGameBundle, ITADGameSub, ITADOverviewPrice } from '../../../types/itad';
+import { ITADGameBundle, ITADGameSub } from '../../../types/itad';
 import { SteamAppReview, SteamNewsItem, SteamReviewSummary, SteamReviewType, SteamReviewTypeValue } from '../../../services/steam';
 import { WaitlistService } from '../../services/waitlist';
 import { OwnedGamesService } from '../../services/owned-games';
@@ -29,8 +30,6 @@ export interface HistoryShopItem {
   icon: string;
   count: number;
 }
-
-import { NavigationService } from '../../services/navigation';
 
 @Component({
   selector: 'app-details',
@@ -47,6 +46,7 @@ import { NavigationService } from '../../services/navigation';
     ChartModule,
     MatIconModule,
     StoreLogo,
+    ShopSwiper,
     ImgShimmerDirective,
     DeferLoadDirective
   ],
@@ -64,7 +64,6 @@ export class Details implements OnInit {
   public owned = inject(OwnedGamesService);
   private restoreWaitlist = inject(RestoreWaitlistPrompt);
   public timeService = inject(TimeService);
-  public nav = inject(NavigationService);
 
   uuid = signal<string | null>(null);
   details = signal<any>(null);
@@ -76,10 +75,8 @@ export class Details implements OnInit {
   loadingHistory = signal(true);
   loadingSubs = signal(true);
   loadingBundles = signal(true);
-  loadingOverview = signal(true);
   loadingSteamReviews = signal(false);
   loadingSteamNews = signal(false);
-  overview = signal<ITADOverviewPrice | null>(null);
   steamReviews = signal<SteamAppReview[]>([]);
   steamReviewSummary = signal<SteamReviewSummary | null>(null);
   steamReviewType = signal<SteamReviewTypeValue>(SteamReviewType.All);
@@ -105,36 +102,16 @@ export class Details implements OnInit {
     return found ? found.name : null;
   });
 
+  historyShopTiles = computed<ShopSwiperItem[]>(() =>
+    this.historyShops().map(shop => ({
+      id: shop.id,
+      name: shop.name,
+      caption: `${shop.count} ${shop.count === 1 ? 'registro' : 'registros'}`,
+    }))
+  );
+
   chartData = signal<any>(null);
-  chartOptions = signal<any>({
-    maintainAspectRatio: false,
-    aspectRatio: 0.6,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (context: any) => {
-            const val = context.raw;
-            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-          }
-        }
-      }
-    },
-    scales: {
-      x: {
-        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-        ticks: { color: 'rgba(255, 255, 255, 0.5)', font: { size: 10 } }
-      },
-      y: {
-        grid: { color: 'rgba(255, 255, 255, 0.08)' },
-        ticks: {
-          color: 'rgba(255, 255, 255, 0.6)',
-          font: { size: 11 },
-          callback: (value: any) => `R$ ${value}`
-        }
-      }
-    }
-  });
+  chartOptions = signal<any>(null);
 
   gameInfo = computed(() => this.details()?.info || null);
   gamePrices = computed<any[]>(() => this.details()?.prices || []);
@@ -171,15 +148,6 @@ export class Details implements OnInit {
     return [...prices].sort((a, b) => (a.price?.amount ?? 0) - (b.price?.amount ?? 0))[0];
   });
 
-  overviewCurrent = computed(() => this.overview()?.current || null);
-  overviewLowest = computed(() => this.overview()?.lowest || null);
-  overviewBundled = computed(() => this.overview()?.bundled ?? 0);
-  isOverviewHistoryLow = computed(() => {
-    const current = this.overviewCurrent()?.price?.amount;
-    const lowest = this.overviewLowest()?.price?.amount;
-    if (current == null || lowest == null) return false;
-    return current <= lowest + 0.01;
-  });
 
   ngOnInit() {
     this.initChartOptions();
@@ -198,7 +166,6 @@ export class Details implements OnInit {
     this.history.set([]);
     this.subscriptions.set([]);
     this.bundles.set([]);
-    this.overview.set(null);
     this.steamReviews.set([]);
     this.steamReviewSummary.set(null);
     this.steamReviewType.set(SteamReviewType.All);
@@ -214,20 +181,16 @@ export class Details implements OnInit {
     this.loadingHistory.set(true);
     this.loadingSubs.set(true);
     this.loadingBundles.set(true);
-    this.loadingOverview.set(true);
     this.loadingSteamReviews.set(false);
     this.loadingSteamNews.set(false);
   }
 
-  reveal(section: 'overview' | 'prices' | 'subs' | 'bundles' | 'history' | 'reviews' | 'news') {
+  reveal(section: 'prices' | 'subs' | 'bundles' | 'history' | 'reviews' | 'news') {
     const uuid = this.uuid();
     if (!uuid || this.revealed.has(section)) return;
     this.revealed.add(section);
 
     switch (section) {
-      case 'overview':
-        this.loadOverview(uuid);
-        break;
       case 'prices':
         this.loadPrices(uuid);
         break;
@@ -250,9 +213,26 @@ export class Details implements OnInit {
   }
 
   initChartOptions() {
-    this.chartOptions.set({
+    const mq = window.matchMedia('(max-width: 639px)');
+    const apply = () => this.chartOptions.set(this.buildChartOptions(mq.matches));
+    apply();
+    mq.addEventListener('change', apply);
+    this.destroyRef.onDestroy(() => mq.removeEventListener('change', apply));
+  }
+
+  private compactChartMonth(label: string): string {
+    const text = String(label).replace(/\./g, '').trim();
+    const parts = text.split(/\s+/);
+    return parts[parts.length - 1] || text;
+  }
+
+  private buildChartOptions(isMobile: boolean) {
+    return {
       maintainAspectRatio: false,
       aspectRatio: 0.6,
+      layout: {
+        padding: { left: 0, right: isMobile ? 0 : 4, top: 4, bottom: 0 }
+      },
       plugins: {
         legend: {
           display: false
@@ -270,28 +250,53 @@ export class Details implements OnInit {
       },
       scales: {
         x: {
+          offset: !isMobile,
+          border: {
+            display: false
+          },
           ticks: {
             color: '#ffffff66',
-            maxRotation: 45,
-            minRotation: 45
+            padding: isMobile ? 0 : 3,
+            maxRotation: isMobile ? 0 : 45,
+            minRotation: isMobile ? 0 : 45,
+            autoSkip: true,
+            maxTicksLimit: isMobile ? 5 : 10,
+            font: { size: isMobile ? 10 : 11 },
+            callback: (value: string | number) => {
+              const label = String(value);
+              if (!isMobile) return label;
+              return this.compactChartMonth(label);
+            }
           },
           grid: {
             color: '#ffffff11',
-            drawBorder: false
+            drawBorder: false,
+            offset: !isMobile
           }
         },
         y: {
           ticks: {
+            display: !isMobile,
             color: '#ffffff66',
+            padding: isMobile ? 0 : 3,
             callback: (value: any) => this.formatPrice(value)
+          },
+          border: {
+            display: !isMobile
           },
           grid: {
             color: '#ffffff11',
-            drawBorder: false
-          }
+            drawBorder: false,
+            drawTicks: !isMobile
+          },
+          afterFit: isMobile
+            ? (scale: { width: number }) => {
+                scale.width = 0;
+              }
+            : undefined
         }
       }
-    });
+    };
   }
 
   loadInfo(uuid: string) {
@@ -340,23 +345,6 @@ export class Details implements OnInit {
           history: current?.history || []
         }));
         this.loadingPrices.set(false);
-      }
-    });
-  }
-
-  loadOverview(uuid: string) {
-    this.loadingOverview.set(true);
-    this.itadApi.getGameOverview(uuid, APP_COUNTRY, DEFAULT_SHOP_IDS).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (data) => {
-        if (this.uuid() !== uuid) return;
-        const prices = Array.isArray(data?.prices) ? data.prices : [];
-        this.overview.set(prices.find(item => item.id === uuid) || prices[0] || null);
-        this.loadingOverview.set(false);
-      },
-      error: () => {
-        if (this.uuid() !== uuid) return;
-        this.overview.set(null);
-        this.loadingOverview.set(false);
       }
     });
   }
@@ -517,8 +505,8 @@ export class Details implements OnInit {
     }
   }
 
-  selectHistoryShop(shopId: number) {
-    if (this.selectedHistoryShop() === shopId) return; // Always keep one selected
+  selectHistoryShop(shopId: number | null) {
+    if (shopId == null || this.selectedHistoryShop() === shopId) return;
     this.selectedHistoryShop.set(shopId);
     this.prepareChartForShop(shopId);
   }
@@ -670,13 +658,39 @@ export class Details implements OnInit {
     return flag;
   }
 
-  getPlatformNames(platforms: any[] | undefined | null): string[] {
-    if (!Array.isArray(platforms)) return [];
-    return platforms.map(p => (typeof p === 'string' ? p : p?.name)).filter(Boolean);
+  formatGameType(type: string | null | undefined): string {
+    const value = (type || '').trim().toLowerCase();
+    if (!value) return 'Não especificado';
+    if (value === 'game') return 'Jogo';
+    if (value === 'dlc' || value === 'expansion' || value === 'dlc_expansion') return 'DLC';
+    if (value === 'package' || value === 'pack') return 'Pacote';
+    if (value === 'bundle') return 'Bundle';
+    if (value === 'mod') return 'Mod';
+    if (value === 'music' || value === 'soundtrack') return 'Trilha sonora';
+    return type!.trim();
   }
 
-  getDrmNames(drm: any[] | undefined | null): string[] {
-    if (!Array.isArray(drm) || drm.length === 0) return ['Sem DRM'];
-    return drm.map(d => (typeof d === 'string' ? d : d?.name || 'DRM')).filter(Boolean);
+  formatCompanyNames(companies: any[] | undefined | null): string {
+    if (!Array.isArray(companies) || companies.length === 0) return 'Não informado';
+    const names = companies
+      .map(company => (typeof company === 'string' ? company : company?.name))
+      .map(name => (typeof name === 'string' ? name.trim() : ''))
+      .filter(Boolean);
+    return names.length > 0 ? names.join(', ') : 'Não informado';
+  }
+
+  formatSpecFeatures(info: {
+    achievements?: boolean;
+    tradingCards?: boolean;
+    earlyAccess?: boolean;
+    mature?: boolean;
+  } | null | undefined): string {
+    const parts = [
+      `Conquistas: ${info?.achievements ? 'sim' : 'não'}`,
+      `Cartas: ${info?.tradingCards ? 'sim' : 'não'}`,
+      `Acesso antecipado: ${info?.earlyAccess ? 'sim' : 'não'}`,
+      `Adulto: ${info?.mature ? 'sim' : 'não'}`,
+    ];
+    return parts.join(' · ');
   }
 }

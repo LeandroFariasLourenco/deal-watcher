@@ -10,7 +10,7 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { animate, stagger } from 'motion';
 import { GamePriceCard } from '../../shared/game-price-card/game-price-card';
-import { StoreLogo } from '../../shared/store-logo/store-logo';
+import { ShopSwiper, ShopSwiperItem } from '../../shared/shop-swiper/shop-swiper';
 
 interface ShopItem {
   id: number;
@@ -46,7 +46,7 @@ interface DealFeed {
 @Component({
   selector: 'app-deals',
   standalone: true,
-  imports: [CommonModule, ButtonModule, SkeletonModule, MatIconModule, ToastModule, GamePriceCard, StoreLogo],
+  imports: [CommonModule, ButtonModule, SkeletonModule, MatIconModule, ToastModule, GamePriceCard, ShopSwiper],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   providers: [MessageService],
   templateUrl: './deals.html',
@@ -61,7 +61,6 @@ export class Deals implements OnInit {
   shops = signal<ShopItem[]>([]);
   loadingShops = signal(true);
   selectedShops = signal<number[]>([]);
-  private loadingShopId = signal<number | 'all' | null>(null);
   limit = 20;
   readonly skeletonSlots = Array.from({ length: this.limit }, (_, i) => i);
 
@@ -79,7 +78,17 @@ export class Deals implements OnInit {
     return DEFAULT_SHOP_IDS;
   });
 
-  isAllShopsSelected = computed(() => this.selectedShops().length === 0);
+  selectedShopId = computed(() => this.selectedShops()[0] ?? null);
+
+  shopSwiperItems = computed<ShopSwiperItem[]>(() =>
+    this.shops().map(shop => ({
+      id: shop.id,
+      name: shop.name,
+      caption: `${this.formatDealCount(shop.deals)} ofertas`,
+    }))
+  );
+
+  allShopsCaption = computed(() => `${this.formatDealCount(this.totalDeals())} ofertas`);
 
   shopsLocked = computed(() => this.feeds.some(feed => feed.loading()));
 
@@ -94,7 +103,7 @@ export class Deals implements OnInit {
       this.restoreFeed('played', this.dealsState.played());
       this.allApiShops.set(this.dealsState.allApiShops());
       this.shops.set(this.dealsState.shops());
-      this.selectedShops.set(this.dealsState.selectedShops());
+      this.selectedShops.set(this.normalizeSelectedShops(this.dealsState.selectedShops()));
       this.loadingShops.set(false);
       for (const feed of this.feeds) {
         if (feed.items().length === 0) {
@@ -272,38 +281,36 @@ export class Deals implements OnInit {
     });
   }
 
-  isShopDisabled(shopId: number): boolean {
-    return this.shopsLocked() && this.loadingShopId() !== shopId;
-  }
-
-  isAllShopsDisabled(): boolean {
-    return this.shopsLocked() && this.loadingShopId() !== 'all';
-  }
-
   toggleShop(shopId: number) {
     if (this.shopsLocked()) return;
-    this.loadingShopId.set(shopId);
-    this.selectedShops.update(current => {
-      if (current.includes(shopId)) {
-        return current.filter(id => id !== shopId);
-      } else {
-        return [...current, shopId];
-      }
-    });
+    const current = this.selectedShops();
+    if (current.length === 1 && current[0] === shopId) {
+      this.selectedShops.set([]);
+    } else {
+      this.selectedShops.set([shopId]);
+    }
     this.syncState();
     this.loadAllFeeds();
   }
 
   clearShops() {
     if (this.shopsLocked() || this.selectedShops().length === 0) return;
-    this.loadingShopId.set('all');
     this.selectedShops.set([]);
     this.syncState();
     this.loadAllFeeds();
   }
 
-  isShopSelected(shopId: number): boolean {
-    return this.selectedShops().includes(shopId);
+  onShopSelect(shopId: number | null) {
+    if (shopId == null) {
+      this.clearShops();
+      return;
+    }
+    this.toggleShop(shopId);
+  }
+
+  private normalizeSelectedShops(shopIds: number[]): number[] {
+    if (shopIds.length <= 1) return shopIds;
+    return [shopIds[0]];
   }
 
   formatDealCount(count: number): string {

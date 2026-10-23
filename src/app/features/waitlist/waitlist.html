@@ -1,4 +1,4 @@
-<div class="p-4 space-y-6 pb-2">
+<div class="page-gutter pt-4 pb-2 space-y-6">
   <p-toast position="bottom-center"></p-toast>
 
   @if (auth.isLoggedIn()) {
@@ -190,13 +190,15 @@
             slides-per-view="auto"
             space-between="14"
             grab-cursor="true"
+            observer="true"
+            observe-slide-children="true"
             speed="420"
             resistance-ratio="0.65"
             long-swipes-ratio="0.2"
             short-swipes="true"
           >
             @for (game of ownedRecent(); track game.id) {
-              <swiper-slide class="owned-card-wrap">
+              <swiper-slide class="owned-card-wrap" [class.is-leaving]="isLeaving(game.id)">
                 <a class="owned-card" [routerLink]="['/details', game.id]" [queryParams]="{ from: 'waitlist' }">
                   <div class="owned-thumb">
                     <span class="owned-chip">Comprado</span>
@@ -253,7 +255,7 @@
         <span>Waitlist</span>
       </h2>
 
-    <div class="space-y-1 px-1">
+    <div class="space-y-1">
       @if (loading() && games().length === 0) {
         @for (i of [1,2,3,4,5]; track i) {
           <div class="flex items-center bg-[#16202D]/50 border-b border-black/10 min-h-[72px] px-1">
@@ -275,9 +277,9 @@
             class="waitlist-row"
             [class.is-leaving]="isLeaving(game.id)"
           >
-          <div 
-            class="waitlist-card flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px]" 
-            [routerLink]="['/details', game.id]" 
+          <div
+            class="waitlist-card flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px]"
+            [routerLink]="['/details', game.id]"
             [queryParams]="{ from: 'waitlist' }"
           >
             <div class="game-thumb relative w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
@@ -285,8 +287,8 @@
                 <span class="dlc-strip">DLC</span>
               }
               @if (banner(game); as image) {
-                <img 
-                  [src]="image" 
+                <img
+                  [src]="image"
                   [alt]="game.title"
                   class="block w-full h-full object-cover object-center"
                   referrerpolicy="no-referrer"
@@ -305,7 +307,7 @@
                   <p class="text-xs text-white/45 mt-0.5">Adicionado em {{ game.added | date:'dd/MM/yyyy' }}</p>
                 }
               </div>
-              
+
               <div class="waitlist-actions shrink-0 ml-2">
                 <button
                   type="button"
