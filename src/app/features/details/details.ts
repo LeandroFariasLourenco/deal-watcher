@@ -11,7 +11,10 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { ChartModule } from 'primeng/chart';
 import { MatIconModule } from '@angular/material/icon';
-import { DEFAULT_SHOP_IDS, ALLOWED_STORE_CONFIG } from '../../shared/constants';
+import { APP_COUNTRY, DEFAULT_SHOP_IDS, ALLOWED_STORE_CONFIG } from '../../shared/constants';
+import { StoreLogo } from '../../shared/store-logo/store-logo';
+import { ImgShimmerDirective } from '../../shared/img-shimmer';
+import { ITADGameBundle, ITADGameSub } from '../../../types/itad';
 import { WaitlistService } from '../../services/waitlist';
 import { TimeService } from '../../services/time';
 
@@ -37,7 +40,9 @@ import { NavigationService } from '../../services/navigation';
     ReactiveFormsModule,
     ToastModule,
     ChartModule,
-    MatIconModule
+    MatIconModule,
+    StoreLogo,
+    ImgShimmerDirective
   ],
   providers: [MessageService],
   templateUrl: './details.html',
@@ -54,10 +59,14 @@ export class Details implements OnInit {
   uuid = signal<string | null>(null);
   details = signal<any>(null);
   history = signal<any[]>([]);
+  subscriptions = signal<ITADGameSub[]>([]);
+  bundles = signal<ITADGameBundle[]>([]);
   loading = signal(true);
   loadingHistory = signal(true);
+  loadingSubs = signal(true);
+  loadingBundles = signal(true);
   adding = signal(false);
-  isAlreadyInWishlist = computed(() => this.waitlist.isMonitored(this.uuid()));
+  isAlreadyInWaitlist = computed(() => this.waitlist.isMonitored(this.uuid()));
   error = signal<string | null>(null);
 
   historyShops = signal<HistoryShopItem[]>([]);
@@ -136,6 +145,8 @@ export class Details implements OnInit {
         this.uuid.set(uuid);
         this.loadDetails(uuid);
         this.loadHistory(uuid);
+        this.loadSubscriptions(uuid);
+        this.loadBundles(uuid);
       }
     });
   }
@@ -143,10 +154,16 @@ export class Details implements OnInit {
   resetGameSignals() {
     this.details.set(null);
     this.history.set([]);
+    this.subscriptions.set([]);
+    this.bundles.set([]);
     this.historyShops.set([]);
     this.selectedHistoryShop.set(null);
     this.chartData.set(null);
     this.error.set(null);
+    this.loading.set(true);
+    this.loadingHistory.set(true);
+    this.loadingSubs.set(true);
+    this.loadingBundles.set(true);
   }
 
   initChartOptions() {
@@ -197,7 +214,7 @@ export class Details implements OnInit {
   loadDetails(uuid: string) {
     this.loading.set(true);
     this.error.set(null);
-    this.itadApi.getGameDetails(uuid, 'BR', DEFAULT_SHOP_IDS).subscribe({
+    this.itadApi.getGameDetails(uuid, APP_COUNTRY, DEFAULT_SHOP_IDS).subscribe({
       next: (data) => {
         if (!data || data.error) {
           this.error.set(data?.error || 'Erro ao carregar detalhes');
@@ -218,9 +235,37 @@ export class Details implements OnInit {
     });
   }
 
+  loadSubscriptions(uuid: string) {
+    this.loadingSubs.set(true);
+    this.itadApi.getGameSubs(uuid, APP_COUNTRY).subscribe({
+      next: (data) => {
+        this.subscriptions.set(Array.isArray(data) ? data : []);
+        this.loadingSubs.set(false);
+      },
+      error: () => {
+        this.subscriptions.set([]);
+        this.loadingSubs.set(false);
+      }
+    });
+  }
+
+  loadBundles(uuid: string) {
+    this.loadingBundles.set(true);
+    this.itadApi.getGameBundles(uuid, APP_COUNTRY).subscribe({
+      next: (data) => {
+        this.bundles.set(Array.isArray(data) ? data : []);
+        this.loadingBundles.set(false);
+      },
+      error: () => {
+        this.bundles.set([]);
+        this.loadingBundles.set(false);
+      }
+    });
+  }
+
   loadHistory(uuid: string) {
     this.loadingHistory.set(true);
-    this.itadApi.getHistory(uuid, 'BR', DEFAULT_SHOP_IDS).subscribe({
+    this.itadApi.getHistory(uuid, APP_COUNTRY, DEFAULT_SHOP_IDS).subscribe({
       next: (data) => {
         const list = Array.isArray(data) ? data : [];
         this.history.set(list);
@@ -334,7 +379,7 @@ export class Details implements OnInit {
     });
   }
 
-  async addToWishlist() {
+  async addToWaitlist() {
     const uuid = this.uuid();
     if (!uuid) return;
 

@@ -60,6 +60,25 @@ export interface ITADGameDetails {
   history: ITADHistoryPrice[];
 }
 
+export interface ITADGameSub {
+  id: number | string;
+  name: string;
+  shop?: {
+    id: number;
+    name: string;
+  } | null;
+}
+
+export interface ITADGameBundle {
+  id: number | string;
+  title: string;
+  url?: string | null;
+  details?: string | null;
+  expiry?: string | null;
+  publish?: string | null;
+  note?: string | null;
+}
+
 export interface ITADPriceResponse {
   [uuid: string]: {
     id: string;
@@ -71,6 +90,14 @@ export interface ITADShop {
   id: number;
   name: string;
   title: string;
+}
+
+export interface ITADNotification {
+  id: string;
+  type: string;
+  title: string;
+  timestamp: string;
+  read: string | null;
 }
 
 export interface ITADWaitlistGame {

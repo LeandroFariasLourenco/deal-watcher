@@ -1,22 +1,72 @@
-<div class="p-4 space-y-6 pb-24">
+<div class="p-4 space-y-6 pb-2">
   <p-toast position="bottom-center"></p-toast>
 
   @if (auth.isLoggedIn()) {
     <header class="flex items-center justify-end gap-2 flex-wrap">
+      <div class="notify-menu">
+        <button
+          type="button"
+          class="notify-trigger"
+          (click)="toggleNotifications()"
+          [attr.aria-expanded]="notificationsOpen()"
+          [attr.aria-label]="notifications.hasNotifications() ? 'Notificações da waitlist' : 'Sem notificações'"
+        >
+          <mat-icon>notifications</mat-icon>
+          @if (notifications.hasNotifications()) {
+            <span class="notify-badge" aria-hidden="true"></span>
+          }
+        </button>
+        @if (notificationsOpen()) {
+          <div class="notify-panel" role="menu">
+            @if (notifications.items().length === 0) {
+              <p class="notify-empty">Nenhuma notificação</p>
+            } @else {
+              @for (item of notifications.items(); track item.id) {
+                <div class="notify-item" [class.is-unread]="!item.read">
+                  <p class="notify-item-title">{{ item.title }}</p>
+                  <p class="notify-item-time">{{ item.timestamp | date:'dd/MM/yyyy HH:mm' }}</p>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+      @if (webhook.enabled()) {
+        <button
+          type="button"
+          (click)="toggleWebhook()"
+          [disabled]="webhook.busy()"
+          class="waitlist-action"
+        >
+          <mat-icon>notifications_off</mat-icon>
+          {{ webhook.busy() ? 'Desabilitando…' : 'Desabilitar notificações' }}
+        </button>
+      } @else {
+        <button
+          type="button"
+          (click)="toggleWebhook()"
+          [disabled]="webhook.busy()"
+          class="waitlist-action"
+        >
+          <mat-icon>notifications</mat-icon>
+          {{ webhook.busy() ? 'Habilitando…' : 'Habilitar notificações' }}
+        </button>
+      }
       <button
         type="button"
         (click)="sendEmails()"
         [disabled]="email.sending()"
-        class="text-xs font-semibold text-[#C7D5E0] hover:text-white bg-[#1B2838] border border-[#66C0F4]/30 px-3 py-1.5 rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+        class="waitlist-action"
       >
-        <mat-icon class="!text-sm !w-4 !h-4">mail</mat-icon>
+        <mat-icon>mail</mat-icon>
         {{ email.sending() ? 'Enviando…' : 'Disparar e-mails' }}
       </button>
       <button
         type="button"
         (click)="logout()"
-        class="text-xs font-semibold text-white/70 hover:text-white bg-[#1B2838] border border-white/10 px-3 py-1.5 rounded-lg cursor-pointer"
+        class="waitlist-action waitlist-action-logout"
       >
+        <mat-icon>logout</mat-icon>
         Sair
       </button>
     </header>
@@ -59,7 +109,7 @@
           <div 
             class="waitlist-card flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px]" 
             [routerLink]="['/details', game.id]" 
-            [queryParams]="{ from: 'wishlist' }"
+            [queryParams]="{ from: 'waitlist' }"
           >
             <div class="game-thumb relative w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
               @if ((game.type || '').toLowerCase() === 'dlc') {

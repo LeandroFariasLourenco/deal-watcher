@@ -6,6 +6,7 @@ import { routes } from './app.routes';
 import { TabRouteReuseStrategy } from './routing/tab-route-reuse.strategy';
 import { ItadAuthService } from './services/itad-auth';
 import { WaitlistService } from './services/waitlist';
+import { ItadNotificationsService } from './services/itad-notifications';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -17,10 +18,13 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => {
       const auth = inject(ItadAuthService);
       const waitlist = inject(WaitlistService);
+      const notifications = inject(ItadNotificationsService);
       return auth.restore().then(() => {
-        if (auth.isLoggedIn()) {
-          return waitlist.refresh().catch(() => undefined);
-        }
+        if (!auth.isLoggedIn()) return;
+        return Promise.all([
+          waitlist.refresh().catch(() => undefined),
+          notifications.refresh().catch(() => undefined),
+        ]);
       });
     })
   ]

@@ -1,7 +1,7 @@
 export const ITAD_CLIENT_ID = '8dff7a638baade84';
 export const ITAD_AUTHORIZE_URL = 'https://isthereanydeal.com/oauth/authorize/';
 export { ITAD_TOKEN_URL } from '../../services/itad-endpoints';
-export const ITAD_SCOPES = 'wait_read wait_write';
+export const ITAD_SCOPES = 'wait_read wait_write webhooks notifications';
 export const ITAD_CODE_VERIFIER_KEY = 'itad_code_verifier';
 
 export function generateRandomString(length: number): string {

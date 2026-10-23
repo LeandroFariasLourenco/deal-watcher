@@ -93,7 +93,7 @@ export class WaitlistService {
 
   private async ensureAuth(): Promise<boolean> {
     if (this.auth.isLoggedIn()) return true;
-    const returnUrl = `${location.pathname}${location.search}` || '/wishlist';
+    const returnUrl = `${location.pathname}${location.search}` || '/waitlist';
     await this.auth.login(returnUrl);
     return false;
   }

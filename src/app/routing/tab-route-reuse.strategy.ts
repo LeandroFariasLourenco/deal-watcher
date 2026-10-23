@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, DetachedRouteHandle, RouteReuseStrategy } from '@angular/router';
 
-const CACHED_TABS = new Set(['deals', 'search', 'wishlist', 'giveaways']);
+const CACHED_TABS = new Set(['deals', 'search', 'waitlist', 'giveaways']);
 
 @Injectable()
 export class TabRouteReuseStrategy implements RouteReuseStrategy {

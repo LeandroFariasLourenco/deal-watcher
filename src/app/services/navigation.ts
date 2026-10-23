@@ -1,9 +1,11 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router, NavigationEnd, NavigationStart } from '@angular/router';
 
-export type MainTab = 'deals' | 'search' | 'wishlist' | 'giveaways';
+export type MainTab = 'deals' | 'search' | 'waitlist' | 'giveaways';
 
-const CACHED_TABS = new Set<MainTab>(['deals', 'search', 'wishlist', 'giveaways']);
+export const MAIN_TABS: MainTab[] = ['deals', 'search', 'waitlist', 'giveaways'];
+
+const CACHED_TABS = new Set<MainTab>(MAIN_TABS);
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +13,7 @@ const CACHED_TABS = new Set<MainTab>(['deals', 'search', 'wishlist', 'giveaways'
 export class NavigationService {
   private router = inject(Router);
   private readonly scrolls = new Map<string, number>();
+  private queuedTab: MainTab | null = null;
 
   currentTab = signal<MainTab>('deals');
 
@@ -26,6 +29,7 @@ export class NavigationService {
       if (event instanceof NavigationEnd) {
         const url = event.urlAfterRedirects || event.url || '';
         this.updateContextFromUrl(url);
+        this.queuedTab = null;
         const to = this.tabFromUrl(url);
         if (to && this.scrolls.has(to)) {
           const top = this.scrolls.get(to) ?? 0;
@@ -60,19 +64,20 @@ export class NavigationService {
   updateContextFromUrl(url: string) {
     const cleanUrl = url.split('?')[0];
     const queryParams = new URLSearchParams(url.includes('?') ? url.split('?')[1] : '');
-    const fromParam = queryParams.get('from') as MainTab | null;
+    const fromParam = queryParams.get('from');
 
     if (cleanUrl.startsWith('/deals')) {
       this.currentTab.set('deals');
     } else if (cleanUrl.startsWith('/search')) {
       this.currentTab.set('search');
-    } else if (cleanUrl.startsWith('/wishlist')) {
-      this.currentTab.set('wishlist');
+    } else if (cleanUrl.startsWith('/waitlist')) {
+      this.currentTab.set('waitlist');
     } else if (cleanUrl.startsWith('/giveaways')) {
       this.currentTab.set('giveaways');
     } else if (cleanUrl.startsWith('/details')) {
-      if (fromParam && ['deals', 'search', 'wishlist', 'giveaways'].includes(fromParam)) {
-        this.currentTab.set(fromParam);
+      const fromTab = fromParam === 'wishlist' ? 'waitlist' : fromParam;
+      if (fromTab && MAIN_TABS.includes(fromTab)) {
+        this.currentTab.set(fromTab);
       }
       // If no fromParam, keep currentTab as is!
     }
@@ -80,6 +85,23 @@ export class NavigationService {
 
   setTab(tab: MainTab) {
     this.currentTab.set(tab);
+  }
+
+  isOnMainTab(): boolean {
+    return this.tabFromUrl(this.router.url) !== null;
+  }
+
+  cycleTab(step: number) {
+    if (!step) return;
+    const direction = step > 0 ? 1 : -1;
+    const current = this.queuedTab ?? this.tabFromUrl(this.router.url) ?? this.currentTab();
+    const index = Math.max(0, MAIN_TABS.indexOf(current));
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= MAIN_TABS.length) return;
+    const next = MAIN_TABS[nextIndex];
+    if (next === current) return;
+    this.queuedTab = next;
+    this.router.navigate([`/${next}`]);
   }
 
   goBack() {
@@ -91,7 +113,7 @@ export class NavigationService {
     switch (tab) {
       case 'deals': return 'Ofertas';
       case 'search': return 'Pesquisa';
-      case 'wishlist': return 'Monitoramento';
+      case 'waitlist': return 'Waitlist';
       case 'giveaways': return 'Gratuitos';
     }
   }

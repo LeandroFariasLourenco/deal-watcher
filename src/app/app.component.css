@@ -8,6 +8,21 @@
   margin-inline: auto;
 }
 
+.deals-shell {
+  overflow-x: hidden;
+}
+
+.app-disclaimer {
+  max-width: 26rem;
+  margin: 1.75rem auto 0;
+  padding: 0 1.5rem;
+  text-align: center;
+  font-size: 0.625rem;
+  line-height: 1.5;
+  font-weight: 400;
+  color: rgba(199, 213, 224, 0.34);
+}
+
 .pi {
   font-size: 1.25rem;
 }
@@ -29,6 +44,17 @@
 
 .nav-icon {
   transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.nav-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  line-height: 0;
+}
+
+.nav-icon-wrap .notify-badge {
+  top: -0.1rem;
+  right: -0.2rem;
 }
 
 .active-indicator {

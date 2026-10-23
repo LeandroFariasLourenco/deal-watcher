@@ -17,9 +17,14 @@ export const routes: Routes = [
     data: { reuse: true }
   },
   {
-    path: 'wishlist',
-    loadComponent: () => import('./features/wishlist/wishlist').then(m => m.Wishlist),
+    path: 'waitlist',
+    loadComponent: () => import('./features/waitlist/waitlist').then(m => m.Waitlist),
     data: { reuse: true }
+  },
+  {
+    path: 'wishlist',
+    redirectTo: 'waitlist',
+    pathMatch: 'full'
   },
   {
     path: 'giveaways',

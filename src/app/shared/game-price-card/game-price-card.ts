@@ -1,17 +1,20 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MessageService } from 'primeng/api';
 import { DealItem } from '../../services/deals-state';
 import { TimeService } from '../../services/time';
 import { WaitlistService } from '../../services/waitlist';
+import { StoreLogo } from '../store-logo/store-logo';
+import { ImgShimmerDirective } from '../img-shimmer';
 
 @Component({
   selector: 'app-game-price-card',
   standalone: true,
-  imports: [MatIconModule, RouterLink],
+  imports: [MatIconModule, RouterLink, StoreLogo, ImgShimmerDirective],
   host: {
     class: 'game-price-card',
+    '[class.is-featured]': 'variant() === "featured"',
     '[style.animation-delay.ms]': 'enterDelay()',
   },
   templateUrl: './game-price-card.html',
@@ -22,6 +25,15 @@ export class GamePriceCard {
   rank = input<number | null>(null);
   from = input('deals');
   enterDelay = input<number | null>(null);
+  variant = input<'list' | 'featured'>('list');
+  highlight = input(false);
+
+  isHistoryLow = computed(() => {
+    const current = this.game().price?.amount;
+    const low = this.game().historyLow?.amount;
+    if (current == null || low == null) return false;
+    return current <= low + 0.01;
+  });
 
   timeService = inject(TimeService);
   waitlist = inject(WaitlistService);

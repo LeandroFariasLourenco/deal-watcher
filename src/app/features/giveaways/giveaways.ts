@@ -8,6 +8,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 import { MatIconModule } from '@angular/material/icon';
 import { animate, stagger } from 'motion';
+import { ImgShimmerDirective } from '../../shared/img-shimmer';
 
 interface Giveaway {
   id: number;
@@ -23,7 +24,7 @@ interface Giveaway {
 @Component({
   selector: 'app-giveaways',
   standalone: true,
-  imports: [CommonModule, CardModule, ButtonModule, SkeletonModule, TagModule, RouterLink, MatIconModule],
+  imports: [CommonModule, CardModule, ButtonModule, SkeletonModule, TagModule, RouterLink, MatIconModule, ImgShimmerDirective],
   templateUrl: './giveaways.html',
   styleUrl: './giveaways.css'
 })

@@ -1,5 +1,5 @@
 <p-toast position="bottom-center"></p-toast>
-<div class="p-4 space-y-5 pb-24">
+<div class="p-4 space-y-5 pb-2">
   <form (submit)="onSearch(); $event.preventDefault()" class="relative flex items-center">
     <input 
       type="text" 
@@ -53,9 +53,6 @@
         @for (game of results(); track game.id) {
           <div class="result-card flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px]" [routerLink]="['/details', game.id]" [queryParams]="{ from: 'search' }">
             <div class="game-thumb relative w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
-              @if ((game.type || '').toLowerCase() === 'dlc') {
-                <span class="dlc-strip">DLC</span>
-              }
               @if (game.assets?.banner300) {
                 <img 
                   [src]="game.assets.banner300" 

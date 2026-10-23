@@ -2,6 +2,8 @@ import express from 'express';
 import path from 'path';
 import axios from 'axios';
 import { ITADService, ALLOWED_SHOP_IDS } from './src/services/itad';
+import { cache, CACHE_TTL, COLLECTIONS } from './src/services/cache';
+import { APP_COUNTRY } from './src/app/shared/constants';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 
@@ -32,7 +34,7 @@ const loadData = () => {
   if (!fs.existsSync(DB_FILE)) {
     return { 
       settings: { 
-        country: 'BR',
+        country: APP_COUNTRY,
         check_interval_minutes: 240 
       }, 
       notifications: [] 
@@ -43,7 +45,7 @@ const loadData = () => {
   } catch (e) {
     return { 
       settings: { 
-        country: 'BR',
+        country: APP_COUNTRY,
         check_interval_minutes: 240 
       }, 
       notifications: [] 
@@ -87,7 +89,7 @@ async function startServer() {
   });
 
   app.get('/api/proxy/itad/shops', async (req, res) => {
-    const country = (req.query.country as string) || 'BR';
+    const country = (req.query.country as string) || APP_COUNTRY;
     try {
       const results = await itad.getShops(country);
       res.json(results);
@@ -98,7 +100,7 @@ async function startServer() {
 
   app.get('/api/proxy/itad/deals', async (req, res) => {
     const { country, offset, limit, shops, sort } = req.query;
-    const targetCountry = (country as string) || 'BR';
+    const targetCountry = (country as string) || APP_COUNTRY;
     const shopIds = parseShopIds(shops);
     try {
       const results = await itad.getDeals(targetCountry, Number(offset) || 0, Number(limit) || 20, shopIds, (sort as string) || undefined);
@@ -112,7 +114,7 @@ async function startServer() {
     const uuids = Array.isArray(req.body) ? req.body : req.body?.uuids || [];
     const shopIds = parseShopIds(req.query.shops || req.body?.shops);
     try {
-      const results = await itad.getPrices(uuids, 'BR', shopIds);
+      const results = await itad.getPrices(uuids, APP_COUNTRY, shopIds);
       res.json(results);
     } catch (e: any) {
       res.status(500).json({ error: 'ITAD Prices Failed' });
@@ -123,10 +125,34 @@ async function startServer() {
     const { uuid } = req.params;
     const shopIds = parseShopIds(req.query.shops);
     try {
-      const details = await itad.getGameDetails(uuid, 'BR', shopIds);
+      const details = await itad.getGameDetails(uuid, APP_COUNTRY, shopIds);
       res.json(details);
     } catch (e: any) {
       res.status(500).json({ error: 'ITAD Details Failed' });
+    }
+  });
+
+  app.post('/api/proxy/itad/subs', async (req, res) => {
+    const uuids = Array.isArray(req.body) ? req.body : req.body?.uuids || [];
+    const uuid = uuids[0] || req.body?.uuid;
+    const country = (req.query.country as string) || APP_COUNTRY;
+    if (!uuid) return res.status(400).json({ error: 'Game ID required' });
+    try {
+      const results = await itad.getGameSubs(uuid, country);
+      res.json(results);
+    } catch (e: any) {
+      res.status(500).json({ error: 'ITAD Subs Failed' });
+    }
+  });
+
+  app.get('/api/proxy/itad/bundles/:uuid', async (req, res) => {
+    const { uuid } = req.params;
+    const country = (req.query.country as string) || APP_COUNTRY;
+    try {
+      const results = await itad.getGameBundles(uuid, country);
+      res.json(results);
+    } catch (e: any) {
+      res.status(500).json({ error: 'ITAD Bundles Failed' });
     }
   });
 
@@ -134,7 +160,7 @@ async function startServer() {
     const { uuid } = req.params;
     const shopIds = parseShopIds(req.query.shops);
     try {
-      const history = await itad.getHistory(uuid, 'BR', shopIds);
+      const history = await itad.getHistory(uuid, APP_COUNTRY, shopIds);
       res.json(history);
     } catch (e: any) {
       res.status(500).json({ error: 'ITAD History Failed' });
@@ -154,7 +180,11 @@ async function startServer() {
   app.get('/api/proxy/steam/storesearch', async (req, res) => {
     const term = (req.query.term as string) || '';
     if (!term.trim()) return res.status(400).json({ error: 'Term required' });
+    const cacheKey = `storesearch:${term.trim().toLowerCase()}:pt:BR`;
     try {
+      const cached = await cache.get<any>(COLLECTIONS.STEAM, cacheKey);
+      if (cached) return res.json(cached);
+
       const url = `https://store.steampowered.com/api/storesearch/?term=${encodeURIComponent(term.trim())}&l=portuguese&cc=BR`;
       const response = await axios.get(url, {
         headers: {
@@ -162,6 +192,7 @@ async function startServer() {
         },
         timeout: 10000
       });
+      await cache.set(COLLECTIONS.STEAM, cacheKey, response.data, CACHE_TTL.STEAM_SEARCH);
       res.json(response.data);
     } catch (e: any) {
       console.error('Steam Storesearch Error:', e.message);
@@ -174,12 +205,19 @@ async function startServer() {
     const region = (req.query.region as string) || 'br';
     const key = (req.query.key as string) || '9YQGBo_uCxKnRwN5oyo37uSQAQYZa7PE';
     if (!ids.trim()) return res.status(400).json({ error: 'Steam App ID required' });
+    const cacheKey = `${ids.trim()}:${region.toLowerCase()}`;
     try {
+      const cached = await cache.get<any>(COLLECTIONS.GGDEALS, cacheKey);
+      if (cached) return res.status(200).json(cached);
+
       const url = `https://api.gg.deals/v1/prices/by-steam-app-id/?key=${encodeURIComponent(key)}&ids=${encodeURIComponent(ids)}&region=${encodeURIComponent(region)}`;
       const response = await axios.get(url, {
         timeout: 10000,
         validateStatus: () => true
       });
+      if (response.status === 200) {
+        await cache.set(COLLECTIONS.GGDEALS, cacheKey, response.data, CACHE_TTL.GGDEALS);
+      }
       res.status(response.status).json(response.data);
     } catch (e: any) {
       console.error('GG.deals Error:', e.message);

@@ -1,97 +1,100 @@
 <p-toast position="bottom-center"></p-toast>
-<div class="p-3 sm:p-4 space-y-5">
-  @if (selectedShops().length > 0) {
-    <header class="flex items-center justify-end">
-      <button 
-        type="button"
-        (click)="clearShops()" 
-        class="text-xs font-semibold text-[#66C0F4] hover:text-white bg-[#1B2838] hover:bg-[#243447] border border-[#66C0F4]/30 px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1"
-      >
-        <mat-icon class="!text-sm !w-4 !h-4">filter_alt_off</mat-icon>
-        <span>Limpar ({{ selectedShops().length }})</span>
-      </button>
-    </header>
-  }
-
-  <section class="space-y-2">
-    <div class="flex items-center justify-between">
-      <h2 class="text-xs font-bold uppercase tracking-wider text-white/50">Lojas Oficiais</h2>
-    </div>
+<div class="deals-page">
+  <section class="deals-centered space-y-3">
+    <h2 class="deals-section-title">
+      <mat-icon>storefront</mat-icon>
+      <span>Lojas Oficiais</span>
+    </h2>
 
     @if (loadingShops()) {
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        @for (i of [1,2,3,4,5,6,7,8]; track i) {
-          <p-skeleton width="100%" height="62px" borderRadius="10px"></p-skeleton>
+      <div class="official-shops-row">
+        @for (i of [1,2,3,4,5,6,7,8,9]; track i) {
+          <div class="official-shop official-shop-skeleton">
+            <p-skeleton shape="circle" size="2.35rem"></p-skeleton>
+            <p-skeleton width="3.4rem" height="0.7rem"></p-skeleton>
+            <p-skeleton width="3rem" height="0.55rem"></p-skeleton>
+          </div>
         }
       </div>
     } @else {
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div class="official-shops-row">
+        <button
+          type="button"
+          (click)="clearShops()"
+          class="official-shop"
+          [class.official-shop-active]="isAllShopsSelected()"
+          [disabled]="isAllShopsDisabled()"
+        >
+          <span class="official-shop-icon">
+            <mat-icon>apps</mat-icon>
+          </span>
+          <span class="official-shop-name">Todas</span>
+          <span class="official-shop-deals">{{ formatDealCount(totalDeals()) }} ofertas</span>
+        </button>
         @for (shop of shops(); track shop.id) {
-          <p-card 
+          <button
+            type="button"
             (click)="toggleShop(shop.id)"
-            [styleClass]="isShopSelected(shop.id) ? 'store-card store-card-active' : 'store-card'"
+            class="official-shop"
+            [class.official-shop-active]="isShopSelected(shop.id)"
+            [disabled]="isShopDisabled(shop.id)"
           >
-            <div class="store-card-inner">
-              <span class="store-active-bar"></span>
-              <div class="store-icon-box">
-                <mat-icon class="store-icon">{{ shop.icon }}</mat-icon>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between gap-1">
-                  <h3 class="text-sm font-bold text-white truncate">{{ shop.name }}</h3>
-                  @if (isShopSelected(shop.id)) {
-                    <mat-icon class="store-check-icon">check_circle</mat-icon>
-                  }
-                </div>
-                <p class="text-xs text-white/50 truncate mt-0.5 tabular-nums">
-                  {{ shop.deals }} ofertas
-                </p>
-              </div>
-            </div>
-          </p-card>
+            <span class="official-shop-icon">
+              <app-store-logo [shopId]="shop.id" [shopName]="shop.name" [size]="28" />
+            </span>
+            <span class="official-shop-name">{{ shop.name }}</span>
+            <span class="official-shop-deals">{{ formatDealCount(shop.deals) }} ofertas</span>
+          </button>
         }
       </div>
     }
   </section>
 
-  <div class="space-y-1">
-    @for (deal of deals(); track deal.id) {
-      <app-game-price-card
-        class="cascade-item"
-        [game]="deal"
-        from="deals"
-      />
-    }
+  @for (feed of feeds; track feed.id) {
+    @if (feed.loading() || feed.loadingMore() || feed.items().length > 0) {
+    <section class="featured-section">
+      <h2 class="deals-section-title deals-centered">
+        <mat-icon>{{ feed.icon }}</mat-icon>
+        <span>{{ feed.title }}</span>
+      </h2>
 
-    @if (loading()) {
-      @for (i of [1,2,3,4,5,6,7,8]; track i) {
-        <div class="flex items-center bg-[#16202D]/50 border-b border-black/10 min-h-[72px] px-1">
-          <p-skeleton width="112px" height="72px"></p-skeleton>
-          <div class="flex-1 px-3 py-2 space-y-2">
-            <p-skeleton width="70%" height="0.8rem"></p-skeleton>
-            <p-skeleton width="30%" height="0.6rem"></p-skeleton>
-          </div>
-          <div class="shrink-0 flex gap-2 items-center px-2">
-            <p-skeleton width="40px" height="24px"></p-skeleton>
-            <p-skeleton width="50px" height="18px"></p-skeleton>
-          </div>
-        </div>
-      }
-    }
+      <swiper-container
+        class="deals-swiper"
+        slides-per-view="auto"
+        space-between="14"
+        free-mode="true"
+        grab-cursor="true"
+        observer="true"
+        observe-slide-children="true"
+        (swiperreachend)="onFeedReachEnd(feed.id)"
+      >
+        @for (deal of feed.items(); track deal.id; let i = $index) {
+          <swiper-slide class="featured-card-wrap" [class.cascade-item]="feed.id === 'featured'">
+            <app-game-price-card
+              [game]="deal"
+              from="deals"
+              variant="featured"
+              [highlight]="feed.highlightFirst && i === 0"
+            />
+          </swiper-slide>
+        }
 
-    @if (!loading() && deals().length > 0) {
-      <div class="pt-3 pb-2 px-3 flex justify-center">
-        <button 
-          type="button"
-          (click)="loadMore()"
-          [disabled]="loadingMore()"
-          class="load-more-link w-full py-3 bg-transparent border-none shadow-none text-base font-semibold leading-none text-[#C7D5E0]/70 hover:text-[#66C0F4] inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span class="leading-none">Ver mais ofertas</span>
-          <mat-icon class="!text-xl !w-5 !h-5 !leading-none !flex !items-center !justify-center overflow-hidden">keyboard_arrow_down</mat-icon>
-        </button>
-      </div>
+        @if (feed.loading() || feed.loadingMore()) {
+          @for (i of [1,2,3,4]; track i) {
+            <swiper-slide class="featured-card-wrap">
+              <div class="featured-skeleton">
+                <p-skeleton width="100%" height="7.6rem" borderRadius="0.9rem 0.9rem 0 0"></p-skeleton>
+                <div class="featured-skeleton-body">
+                  <p-skeleton width="70%" height="0.9rem"></p-skeleton>
+                  <p-skeleton width="40%" height="0.55rem"></p-skeleton>
+                  <p-skeleton width="55%" height="0.8rem"></p-skeleton>
+                </div>
+              </div>
+            </swiper-slide>
+          }
+        }
+      </swiper-container>
+    </section>
     }
-  </div>
+  }
 </div>
-

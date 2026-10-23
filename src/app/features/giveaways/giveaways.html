@@ -1,4 +1,4 @@
-<div class="p-4 pb-24 space-y-4">
+<div class="p-4 pb-2 space-y-4">
   @if (!loading() && giveaways().length > 0) {
     <div class="flex items-center justify-end">
       <span class="text-xs text-white/40 font-mono">{{ giveaways().length }} disponíveis</span>
@@ -36,9 +36,6 @@
       @for (item of giveaways(); track item.id || $index; let i = $index) {
         <a [href]="item.url || '#'" target="_blank" rel="noopener noreferrer" class="giveaway-card cascade-item flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px] no-underline">
           <div class="game-thumb relative w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
-            @if ((item.games?.[0]?.type || '').toLowerCase() === 'dlc') {
-              <span class="dlc-strip">DLC</span>
-            }
             @if (getGameBanner(item)) {
               <img [src]="getGameBanner(item)" 
                    [alt]="item.title" 

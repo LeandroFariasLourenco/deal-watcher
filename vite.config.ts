@@ -23,14 +23,28 @@ export default defineConfig(() => {
       angular(),
       tailwindcss(),
       VitePWA({
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.ts',
         registerType: 'autoUpdate',
+        includeAssets: [
+          'icons/favicon-32x32.png',
+          'icons/icon-192.png',
+          'icons/icon-512.png',
+          'icons/stores/*.png',
+          'icons/stores/*.jpg'
+        ],
+        injectManifest: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,webp}']
+        },
         devOptions: {
-          enabled: true
+          enabled: true,
+          type: 'module'
         },
         manifest: {
           id: basePath,
-          name: 'Deal Watcher',
-          short_name: 'DealWatcher',
+          name: 'Vigia de Ofertas',
+          short_name: 'Ofertas',
           description: 'Monitore promoções de jogos e economize.',
           theme_color: '#171A21',
           background_color: '#171A21',
@@ -39,16 +53,22 @@ export default defineConfig(() => {
           scope: basePath,
           icons: [
             {
-              src: 'https://cdn-icons-png.flaticon.com/512/3258/3258448.png',
+              src: 'icons/icon-192.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'any'
+            },
+            {
+              src: 'icons/icon-512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any'
             },
             {
-              src: 'https://cdn-icons-png.flaticon.com/512/3258/3258448.png',
-              sizes: '192x192',
+              src: 'icons/icon-512.png',
+              sizes: '512x512',
               type: 'image/png',
-              purpose: 'any'
+              purpose: 'maskable'
             }
           ]
         }

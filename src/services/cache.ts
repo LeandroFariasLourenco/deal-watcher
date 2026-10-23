@@ -6,7 +6,10 @@ export interface CacheEntry<T> {
 }
 
 const DB_NAME = 'itad_collection_cache_db';
-const DB_VERSION = 2;
+const DB_VERSION = 4;
+const MINUTE = 1000 * 60;
+const HOUR = MINUTE * 60;
+const DAY = HOUR * 24;
 
 export const COLLECTIONS = {
   SEARCH: 'search_results',
@@ -14,12 +17,36 @@ export const COLLECTIONS = {
   LOOKUPS: 'lookups',
   PRICES: 'prices',
   DETAILS: 'game_details',
-  SHOPS: 'shops'
+  HISTORY: 'price_history',
+  SUBS: 'game_subs',
+  BUNDLES: 'game_bundles',
+  GIVEAWAYS: 'giveaways',
+  SHOPS: 'shops',
+  STEAM: 'steam',
+  GGDEALS: 'ggdeals'
+} as const;
+
+export const CACHE_TTL = {
+  SEARCH: DAY,
+  DEALS: MINUTE * 15,
+  DEALS_STEAM_PLAYERS: DAY,
+  LOOKUPS: DAY * 7,
+  PRICES: MINUTE * 15,
+  DETAILS: HOUR,
+  DETAILS_PARTIAL: MINUTE * 5,
+  HISTORY: HOUR * 6,
+  SUBS: HOUR * 12,
+  BUNDLES: HOUR * 6,
+  GIVEAWAYS: DAY,
+  SHOPS: DAY * 30,
+  STEAM_SEARCH: HOUR,
+  STEAM_WISHLIST: MINUTE * 15,
+  GGDEALS: MINUTE * 15
 } as const;
 
 export type CollectionName = typeof COLLECTIONS[keyof typeof COLLECTIONS];
 
-const DEFAULT_TTL = 1000 * 60 * 60 * 4;
+const DEFAULT_TTL = HOUR * 4;
 
 interface CacheInterface {
   get<T>(collection: CollectionName, key: string): Promise<T | null>;
@@ -52,6 +79,7 @@ class IndexedDBCache implements CacheInterface {
   async get<T>(collection: CollectionName, key: string): Promise<T | null> {
     if (!this.dbPromise) return null;
     const db = await this.dbPromise;
+    if (!db.objectStoreNames.contains(collection)) return null;
     const entry = await db.get(collection, key) as CacheEntry<T> | undefined;
 
     if (!entry) return null;
@@ -67,6 +95,7 @@ class IndexedDBCache implements CacheInterface {
   async set<T>(collection: CollectionName, key: string, data: T, ttl = DEFAULT_TTL): Promise<void> {
     if (!this.dbPromise) return;
     const db = await this.dbPromise;
+    if (!db.objectStoreNames.contains(collection)) return;
     const entry: CacheEntry<T> = {
       key,
       data,
@@ -80,11 +109,13 @@ class IndexedDBCache implements CacheInterface {
     if (!this.dbPromise) return;
     const db = await this.dbPromise;
     if (collection) {
+      if (!db.objectStoreNames.contains(collection)) return;
       const tx = db.transaction(collection, 'readwrite');
       await tx.objectStore(collection).clear();
       await tx.done;
     } else {
       for (const storeName of Object.values(COLLECTIONS)) {
+        if (!db.objectStoreNames.contains(storeName)) continue;
         const tx = db.transaction(storeName, 'readwrite');
         await tx.objectStore(storeName).clear();
         await tx.done;
@@ -130,6 +161,6 @@ class MemoryCache implements CacheInterface {
   }
 }
 
-export const cache: CacheInterface = typeof window !== 'undefined' && 'indexedDB' in window 
-  ? new IndexedDBCache() 
+export const cache: CacheInterface = typeof window !== 'undefined' && 'indexedDB' in window
+  ? new IndexedDBCache()
   : new MemoryCache();

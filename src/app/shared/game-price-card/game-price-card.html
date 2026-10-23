@@ -1,12 +1,61 @@
+@if (variant() === 'featured') {
+  <a class="featured-link" [routerLink]="['/details', game().id]" [queryParams]="{ from: from() }">
+    <div class="featured-thumb">
+      @if (highlight()) {
+        <span class="featured-day-badge">Oferta do dia</span>
+      }
+      <button
+        type="button"
+        (click)="addToWatchlist($event)"
+        class="watchlist-btn featured-watchlist"
+        [class.is-saved]="waitlist.isMonitored(game().id)"
+        [attr.title]="waitlist.isMonitored(game().id) ? 'Na waitlist do ITAD' : 'Adicionar à waitlist'"
+      >
+        <mat-icon>{{ waitlist.isMonitored(game().id) ? 'bookmark' : 'bookmark_border' }}</mat-icon>
+      </button>
+      @if (game().assets?.banner300) {
+        <img
+          [src]="game().assets.banner300"
+          [alt]="game().title"
+          referrerpolicy="no-referrer"
+        />
+      } @else {
+        <div class="featured-thumb-empty">
+          <mat-icon>image</mat-icon>
+        </div>
+      }
+      @if (isHistoryLow()) {
+        <span class="featured-low">
+          <mat-icon>emoji_events</mat-icon>
+          Menor preço histórico
+        </span>
+      }
+    </div>
+
+    <div class="featured-body">
+      <h3 class="featured-title">{{ game().title }}</h3>
+
+      <div class="featured-shop">
+        <app-store-logo [shopId]="game().shop.id" [shopName]="game().shop.name" [size]="14" />
+        <span>{{ game().shop.name }}</span>
+      </div>
+
+      <div class="featured-price-row">
+        @if (game().cut > 0) {
+          <span class="featured-cut">-{{ game().cut }}%</span>
+          <span class="featured-regular">{{ formatPrice(game().regular.amount) }}</span>
+        }
+        <span class="featured-current">{{ formatPrice(game().price.amount) }}</span>
+      </div>
+    </div>
+  </a>
+} @else {
 <div class="card-link" [routerLink]="['/details', game().id]" [queryParams]="{ from: from() }">
 <div class="game-thumb relative w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
   @if (rank(); as position) {
     <span class="rank-badge absolute top-1 left-1 z-10 w-4 h-4 rounded bg-black/75 backdrop-blur-sm border border-white/20 text-[9px] font-bold text-white flex items-center justify-center tabular-nums">
       {{ position }}
     </span>
-  }
-  @if ((game().type || '').toLowerCase() === 'dlc') {
-    <span class="dlc-strip">DLC</span>
   }
   @if (game().assets?.banner300) {
     <img
@@ -26,7 +75,10 @@
   <div class="card-copy flex-1 min-w-0 pr-1 sm:pr-2">
     <h3 class="deal-title text-base font-medium text-[#C7D5E0] truncate leading-tight transition-colors">{{ game().title }}</h3>
     <div class="flex flex-col mt-0.5 sm:mt-1">
-      <span class="text-[11px] sm:text-xs text-[#66C0F4] uppercase font-bold tracking-wider">{{ game().shop.name }}</span>
+      <span class="shop-name-row text-[11px] sm:text-xs text-[#66C0F4] uppercase font-bold tracking-wider">
+        <app-store-logo [shopId]="game().shop.id" [shopName]="game().shop.name" [size]="14" />
+        {{ game().shop.name }}
+      </span>
       @if (timeService.getCountdown(game().expiry); as countdown) {
         <span class="text-sm text-white/70 flex items-center gap-1 mt-1 font-medium">
           <mat-icon class="!text-[14px] !w-3.5 !h-3.5 !leading-none overflow-visible text-[#66C0F4]">schedule</mat-icon>
@@ -61,3 +113,4 @@
   </div>
 </div>
 </div>
+}

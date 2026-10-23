@@ -45,7 +45,35 @@ export class PwaService {
       this.isInstalled.set(true);
       this.isInstallable.set(false);
       this.deferredPrompt.set(null);
+      void this.registerBackgroundNotifications();
     });
+
+    void this.registerBackgroundNotifications();
+  }
+
+  private async registerBackgroundNotifications() {
+    if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      if (Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
+
+      const periodicSync = (registration as ServiceWorkerRegistration & {
+        periodicSync?: {
+          register: (tag: string, options: { minInterval: number }) => Promise<void>;
+        };
+      }).periodicSync;
+
+      if (!periodicSync) return;
+
+      await periodicSync.register('sync-itad-notifications', {
+        minInterval: 24 * 60 * 60 * 1000,
+      });
+    } catch (error) {
+      console.warn('Periodic background sync indisponível', error);
+    }
   }
 
   async install() {

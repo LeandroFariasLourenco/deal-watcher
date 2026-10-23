@@ -1,7 +1,8 @@
 import axios from 'axios';
-import { ITADGame, ITADPriceResponse, ITADGameDetails, ITADHistoryPrice, ITADWaitlistGame } from '../types/itad';
-import { cache, COLLECTIONS } from './cache';
+import { ITADGame, ITADPriceResponse, ITADGameDetails, ITADHistoryPrice, ITADWaitlistGame, ITADGameSub, ITADGameBundle, ITADNotification } from '../types/itad';
+import { cache, CACHE_TTL, COLLECTIONS } from './cache';
 import { ITAD_API_BASE } from './itad-endpoints';
+import { APP_COUNTRY } from '../app/shared/constants';
 
 export const ALLOWED_SHOP_IDS: number[] = [4, 36, 16, 48, 35, 62, 61, 50];
 
@@ -13,6 +14,10 @@ export class ITADService {
         Accept: 'application/json'
       }
     });
+  }
+
+  private resolveCountry(country?: string): string {
+    return (country || APP_COUNTRY).trim().toUpperCase() || APP_COUNTRY;
   }
 
   private resolveShops(shops?: number[]): number[] {
@@ -38,7 +43,7 @@ export class ITADService {
         },
       });
       const data = response.data;
-      await cache.set(COLLECTIONS.SEARCH, cacheKey, data, 1000 * 60 * 60 * 24);
+      await cache.set(COLLECTIONS.SEARCH, cacheKey, data, CACHE_TTL.SEARCH);
       return data;
     } catch (error) {
       console.error('ITAD Search Error:', error);
@@ -46,11 +51,11 @@ export class ITADService {
     }
   }
 
-  async getDeals(country = 'BR', offset = 0, limit = 20, shops: number[] = ALLOWED_SHOP_IDS, sort?: string): Promise<any> {
-    const normalizedCountry = (country || 'BR').toUpperCase();
+  async getDeals(country = APP_COUNTRY, offset = 0, limit = 20, shops: number[] = ALLOWED_SHOP_IDS, sort?: string): Promise<any> {
+    const normalizedCountry = this.resolveCountry(country);
     const targetShops = this.resolveShops(shops);
     const sortedShopsKey = [...targetShops].sort((a, b) => a - b).join(',');
-    const cacheKey = `${normalizedCountry}:${offset}:${limit}:${sortedShopsKey}:${sort || 'default'}`;
+    const cacheKey = `${normalizedCountry}:${offset}:${limit}:${sortedShopsKey}:${sort || 'default'}:nondeals=false`;
     const cached = await cache.get<any>(COLLECTIONS.DEALS, cacheKey);
     if (cached) return cached;
 
@@ -60,13 +65,14 @@ export class ITADService {
         offset,
         limit,
         shops: targetShops.join(','),
+        nondeals: false,
       };
       if (sort) {
         params.sort = sort;
       }
       const response = await this.client.get('/deals/v2', { params });
       const data = response.data;
-      const ttl = sort === 'steam-players' ? 1000 * 60 * 60 * 24 : 1000 * 60 * 15;
+      const ttl = sort === 'steam-players' || sort === '-steam-players' ? CACHE_TTL.DEALS_STEAM_PLAYERS : CACHE_TTL.DEALS;
       await cache.set(COLLECTIONS.DEALS, cacheKey, data, ttl);
       return data;
     } catch (error) {
@@ -87,7 +93,7 @@ export class ITADService {
         },
       });
       const id = response.data.id || null;
-      if (id) await cache.set(COLLECTIONS.LOOKUPS, cacheKey, id, 1000 * 60 * 60 * 24 * 7);
+      if (id) await cache.set(COLLECTIONS.LOOKUPS, cacheKey, id, CACHE_TTL.LOOKUPS);
       return id;
     } catch (error) {
       console.error('ITAD Lookup Error:', error);
@@ -95,11 +101,11 @@ export class ITADService {
     }
   }
 
-  async getPrices(uuids: string[], country = 'BR', shops: number[] = ALLOWED_SHOP_IDS): Promise<ITADPriceResponse> {
-    const normalizedCountry = (country || 'BR').toUpperCase();
+  async getPrices(uuids: string[], country = APP_COUNTRY, shops: number[] = ALLOWED_SHOP_IDS): Promise<ITADPriceResponse> {
+    const normalizedCountry = this.resolveCountry(country);
     const targetShops = this.resolveShops(shops);
     const sortedShopsKey = [...targetShops].sort((a, b) => a - b).join(',');
-    const cacheKey = `${[...uuids].sort().join(',')}:${normalizedCountry}:${sortedShopsKey}`;
+    const cacheKey = `${[...uuids].sort().join(',')}:${normalizedCountry}:${sortedShopsKey}:deals=false`;
     const cached = await cache.get<ITADPriceResponse>(COLLECTIONS.PRICES, cacheKey);
     if (cached) return cached;
 
@@ -110,6 +116,7 @@ export class ITADService {
         params: {
           country: normalizedCountry,
           shops: targetShops.join(','),
+          deals: false,
         },
         headers: {
           'Content-Type': 'text/plain'
@@ -117,7 +124,7 @@ export class ITADService {
         transformRequest: [(data) => data]
       });
       const data = response.data;
-      await cache.set(COLLECTIONS.PRICES, cacheKey, data, 1000 * 60 * 15);
+      await cache.set(COLLECTIONS.PRICES, cacheKey, data, CACHE_TTL.PRICES);
       return data;
     } catch (error) {
       console.error('ITAD Prices Error:', error);
@@ -125,8 +132,8 @@ export class ITADService {
     }
   }
 
-  async getGameDetails(uuid: string, country = 'BR', shops: number[] = ALLOWED_SHOP_IDS): Promise<ITADGameDetails> {
-    const normalizedCountry = (country || 'BR').toUpperCase();
+  async getGameDetails(uuid: string, country = APP_COUNTRY, shops: number[] = ALLOWED_SHOP_IDS): Promise<ITADGameDetails> {
+    const normalizedCountry = this.resolveCountry(country);
     const targetShops = this.resolveShops(shops);
     const sortedShopsKey = [...targetShops].sort((a, b) => a - b).join(',');
     const cacheKey = `${uuid}:${normalizedCountry}:${sortedShopsKey}`;
@@ -162,7 +169,12 @@ export class ITADService {
         history: []
       };
 
-      await cache.set(COLLECTIONS.DETAILS, cacheKey, details, 1000 * 60 * 60);
+      await cache.set(
+        COLLECTIONS.DETAILS,
+        cacheKey,
+        details,
+        normalizedDeals.length > 0 ? CACHE_TTL.DETAILS : CACHE_TTL.DETAILS_PARTIAL
+      );
       return details;
     } catch (error) {
       console.error('ITAD Details Error:', error);
@@ -170,12 +182,84 @@ export class ITADService {
     }
   }
 
-  async getHistory(uuid: string, country = 'BR', shops: number[] = ALLOWED_SHOP_IDS): Promise<ITADHistoryPrice[]> {
-    const normalizedCountry = (country || 'BR').toUpperCase();
+  async getGameSubs(uuid: string, country = APP_COUNTRY): Promise<ITADGameSub[]> {
+    const normalizedCountry = this.resolveCountry(country);
+    const cacheKey = `subs:${uuid}:${normalizedCountry}`;
+    const cached = await cache.get<ITADGameSub[]>(COLLECTIONS.SUBS, cacheKey);
+    if (cached) return cached;
+
+    try {
+      const response = await this.client.post(`/games/subs/v1?country=${encodeURIComponent(normalizedCountry)}`, JSON.stringify([uuid]), {
+        params: {
+          country: normalizedCountry,
+        },
+        headers: {
+          'Content-Type': 'text/plain'
+        },
+        transformRequest: [(data) => data]
+      });
+
+      const payload = Array.isArray(response.data) ? response.data : [];
+      const match = payload.find((item: any) => item?.id === uuid) || payload[0];
+      const rawSubs = Array.isArray(match?.subs) ? match.subs : [];
+      const subs: ITADGameSub[] = rawSubs
+        .map((item: any) => ({
+          id: item?.id ?? item?.shop?.id ?? item?.name,
+          name: item?.name || item?.title || item?.shop?.name || 'Assinatura',
+          shop: item?.shop ? { id: item.shop.id, name: item.shop.name } : null
+        }))
+        .filter((item: ITADGameSub) => !!item.name);
+
+      await cache.set(COLLECTIONS.SUBS, cacheKey, subs, CACHE_TTL.SUBS);
+      return subs;
+    } catch (error) {
+      console.error('ITAD Subs Error:', error);
+      throw error;
+    }
+  }
+
+  async getGameBundles(uuid: string, country = APP_COUNTRY): Promise<ITADGameBundle[]> {
+    const normalizedCountry = this.resolveCountry(country);
+    const cacheKey = `${uuid}:${normalizedCountry}:expired=false`;
+    const cached = await cache.get<ITADGameBundle[]>(COLLECTIONS.BUNDLES, cacheKey);
+    if (cached) return cached;
+
+    try {
+      const response = await this.client.get('/games/bundles/v2', {
+        params: {
+          id: uuid,
+          country: normalizedCountry,
+          expired: false
+        }
+      });
+
+      const rawList = Array.isArray(response.data) ? response.data : [];
+      const bundles: ITADGameBundle[] = rawList
+        .map((item: any) => ({
+          id: item?.id,
+          title: item?.title || 'Bundle',
+          url: item?.url || item?.page?.url || null,
+          details: item?.details || null,
+          expiry: item?.expiry || null,
+          publish: item?.publish || null,
+          note: item?.note || null
+        }))
+        .filter((item: ITADGameBundle) => item.id != null && !!item.title);
+
+      await cache.set(COLLECTIONS.BUNDLES, cacheKey, bundles, CACHE_TTL.BUNDLES);
+      return bundles;
+    } catch (error) {
+      console.error('ITAD Bundles Error:', error);
+      throw error;
+    }
+  }
+
+  async getHistory(uuid: string, country = APP_COUNTRY, shops: number[] = ALLOWED_SHOP_IDS): Promise<ITADHistoryPrice[]> {
+    const normalizedCountry = this.resolveCountry(country);
     const targetShops = this.resolveShops(shops);
     const sortedShopsKey = [...targetShops].sort((a, b) => a - b).join(',');
-    const cacheKey = `history:${uuid}:${normalizedCountry}:${sortedShopsKey}`;
-    const cached = await cache.get<ITADHistoryPrice[]>(COLLECTIONS.DETAILS, cacheKey);
+    const cacheKey = `${uuid}:${normalizedCountry}:${sortedShopsKey}`;
+    const cached = await cache.get<ITADHistoryPrice[]>(COLLECTIONS.HISTORY, cacheKey);
     if (cached) return cached;
 
     try {
@@ -197,7 +281,7 @@ export class ITADService {
           shopId: item.shop?.id
         }));
 
-      await cache.set(COLLECTIONS.DETAILS, cacheKey, history, 1000 * 60 * 60 * 6);
+      await cache.set(COLLECTIONS.HISTORY, cacheKey, history, CACHE_TTL.HISTORY);
       return history;
     } catch (error) {
       console.error('ITAD History Error:', error);
@@ -206,8 +290,8 @@ export class ITADService {
   }
 
   async getGiveaways(offset = 0, limit = 20, sort?: string): Promise<any[]> {
-    const cacheKey = `giveaways:${offset}:${limit}:${sort || 'default'}`;
-    const cached = await cache.get<any[]>(COLLECTIONS.DEALS, cacheKey);
+    const cacheKey = `${offset}:${limit}:${sort || 'default'}`;
+    const cached = await cache.get<any[]>(COLLECTIONS.GIVEAWAYS, cacheKey);
     if (cached) return cached;
 
     try {
@@ -222,7 +306,7 @@ export class ITADService {
       }
       const response = await this.client.get('/giveaways/v1', { params });
       const data = response.data;
-      await cache.set(COLLECTIONS.DEALS, cacheKey, data, 1000 * 60 * 60 * 24);
+      await cache.set(COLLECTIONS.GIVEAWAYS, cacheKey, data, CACHE_TTL.GIVEAWAYS);
       return data;
     } catch (error) {
       console.error('ITAD Giveaways Error:', error);
@@ -230,8 +314,8 @@ export class ITADService {
     }
   }
 
-  async getShops(country = 'BR'): Promise<any[]> {
-    const normalizedCountry = (country || 'BR').toUpperCase();
+  async getShops(country = APP_COUNTRY): Promise<any[]> {
+    const normalizedCountry = this.resolveCountry(country);
     const cacheKey = `list:${normalizedCountry}`;
     const cached = await cache.get<any[]>(COLLECTIONS.SHOPS, cacheKey);
     if (cached) return cached;
@@ -243,7 +327,7 @@ export class ITADService {
         }
       });
       const data = response.data;
-      await cache.set(COLLECTIONS.SHOPS, cacheKey, data, 1000 * 60 * 60 * 24 * 30);
+      await cache.set(COLLECTIONS.SHOPS, cacheKey, data, CACHE_TTL.SHOPS);
       return data;
     } catch (error) {
       console.error('ITAD Shops Error:', error);
@@ -255,7 +339,7 @@ export class ITADService {
     accessToken: string,
     method: 'GET' | 'PUT' | 'DELETE',
     path: string,
-    body?: string[]
+    body?: unknown
   ): Promise<T> {
     return await this.dispatchAuthorized<T>(`${ITAD_API_BASE}${path}`, accessToken, method, body);
   }
@@ -264,16 +348,16 @@ export class ITADService {
     url: string,
     accessToken: string,
     method: 'GET' | 'PUT' | 'DELETE',
-    body?: string[]
+    body?: unknown
   ): Promise<T> {
     const response = await fetch(url, {
       method,
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Accept: 'application/json',
-        ...(body ? { 'Content-Type': 'application/json' } : {})
+        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {})
       },
-      body: body ? JSON.stringify(body) : undefined
+      body: body !== undefined ? JSON.stringify(body) : undefined
     });
 
     if (response.status === 204) {
@@ -306,5 +390,18 @@ export class ITADService {
   async removeFromWaitlist(accessToken: string, uuids: string[]): Promise<void> {
     if (uuids.length === 0) return;
     await this.authorizedRequest<void>(accessToken, 'DELETE', '/waitlist/games/v1', uuids);
+  }
+
+  async addWebhook(accessToken: string, url: string, events: string[]): Promise<{ id: string }> {
+    return await this.authorizedRequest<{ id: string }>(accessToken, 'PUT', '/webhooks/v1', { url, events });
+  }
+
+  async removeWebhook(accessToken: string, id: string): Promise<void> {
+    await this.authorizedRequest<void>(accessToken, 'DELETE', '/webhooks/v1', { id });
+  }
+
+  async getNotifications(accessToken: string): Promise<ITADNotification[]> {
+    const data = await this.authorizedRequest<ITADNotification[]>(accessToken, 'GET', '/notifications/v1');
+    return Array.isArray(data) ? data : [];
   }
 }

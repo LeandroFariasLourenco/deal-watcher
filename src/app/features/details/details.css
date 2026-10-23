@@ -56,6 +56,25 @@
   padding: 0 !important;
 }
 
+.sub-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(102, 192, 244, 0.12);
+  border: 1px solid rgba(102, 192, 244, 0.28);
+}
+
+.sub-icon mat-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  color: #66c0f4;
+}
+
 :host ::ng-deep .detail-tag.p-tag {
   background: rgba(102, 192, 244, 0.14) !important;
   border: 1px solid rgba(102, 192, 244, 0.3) !important;

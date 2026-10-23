@@ -1,5 +1,5 @@
 {
-  "name": "Deal Watcher",
+  "name": "Vigia de Ofertas",
   "description": "Monitor game deals across multiple stores using IsThereAnyDeal API v2. Track prices, historical lows, and import your Steam wishlist.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

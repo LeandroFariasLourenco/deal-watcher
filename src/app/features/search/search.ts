@@ -10,10 +10,11 @@ import { WaitlistService } from '../../services/waitlist';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { SearchStateService } from '../../services/search-state';
-import { DEFAULT_SHOP_IDS } from '../../shared/constants';
+import { APP_COUNTRY, DEFAULT_SHOP_IDS } from '../../shared/constants';
 import { ItadApiService } from '../../services/itad-api';
 import { DealItem } from '../../services/deals-state';
 import { GamePriceCard } from '../../shared/game-price-card/game-price-card';
+import { ImgShimmerDirective } from '../../shared/img-shimmer';
 import { animate, stagger } from 'motion';
 
 @Component({
@@ -28,7 +29,8 @@ import { animate, stagger } from 'motion';
     RouterLink,
     MatIconModule,
     ToastModule,
-    GamePriceCard
+    GamePriceCard,
+    ImgShimmerDirective
   ],
   providers: [MessageService],
   templateUrl: './search.html',
@@ -87,7 +89,7 @@ export class Search implements OnInit {
     }
 
     this.loadingTrending.set(true);
-    this.itadApi.getDeals('BR', 0, 10, DEFAULT_SHOP_IDS, 'steam-players').subscribe({
+    this.itadApi.getDeals(APP_COUNTRY, 0, 10, DEFAULT_SHOP_IDS, 'steam-players').subscribe({
       next: (data) => {
         const rawList = Array.isArray(data?.list) ? data.list : (Array.isArray(data) ? data : []);
         const items = rawList.slice(0, 10).map((item: any) => ({

@@ -1,6 +1,6 @@
 <p-toast></p-toast>
 
-<div class="pb-24">
+<div class="pb-2">
   <div class="sticky top-0 z-40 bg-[#16202D]/95 backdrop-blur-md border-b border-black/30 px-4 py-2.5 flex items-center justify-between">
     <button 
       (click)="nav.goBack()" 
@@ -10,29 +10,15 @@
       <span class="leading-none">Voltar para {{ nav.getTabLabel(nav.currentTab()) }}</span>
     </button>
   </div>
-  @if (loading()) {
-    <div class="relative h-60 w-full bg-black">
-      <p-skeleton width="100%" height="100%"></p-skeleton>
-    </div>
-    <div class="p-4 space-y-4">
-      <p-skeleton width="100%" height="48px" borderRadius="8px"></p-skeleton>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        @for (i of [1,2,3,4]; track i) {
-          <p-skeleton width="100%" height="76px" borderRadius="10px"></p-skeleton>
-        }
-      </div>
-      @for (i of [1,2,3]; track i) {
-        <p-skeleton width="100%" height="110px" borderRadius="10px"></p-skeleton>
-      }
-    </div>
-  } @else if (error(); as err) {
+  @if (error(); as err) {
     <div class="p-8 text-center space-y-4">
       <mat-icon class="!text-6xl text-white/20">error_outline</mat-icon>
       <h2 class="text-xl font-bold text-white">Ops! Algo deu errado</h2>
       <p class="text-white/50 text-sm max-w-xs mx-auto">{{ err }}</p>
       <p-button label="Voltar para Ofertas" routerLink="/deals" styleClass="p-button-text p-button-secondary"></p-button>
     </div>
-  } @else if (gameInfo(); as info) {
+  } @else {
+    @if (gameInfo(); as info) {
     <div class="relative min-h-[240px] w-full bg-[#0e141b] overflow-hidden flex items-end">
       @if (heroBanner()) {
         <img 
@@ -83,22 +69,37 @@
         </div>
       </div>
     </div>
+    } @else {
+      <div class="relative min-h-[240px] w-full bg-[#0e141b] overflow-hidden flex items-end">
+        <p-skeleton width="100%" height="100%"></p-skeleton>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#171A21] via-[#171A21]/80 to-transparent"></div>
+        <div class="relative z-10 w-full p-4 sm:p-6 flex items-end gap-4">
+          <p-skeleton width="5.5rem" height="7.5rem" borderRadius="8px"></p-skeleton>
+          <div class="flex-1 min-w-0 space-y-2">
+            <p-skeleton width="4.5rem" height="1rem" borderRadius="6px"></p-skeleton>
+            <p-skeleton width="70%" height="1.75rem" borderRadius="8px"></p-skeleton>
+            <p-skeleton width="40%" height="0.75rem" borderRadius="6px"></p-skeleton>
+          </div>
+        </div>
+      </div>
+    }
 
     <div class="p-4 sm:p-6 space-y-6">
+      @if (gameInfo(); as info) {
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <button 
           type="button"
           [disabled]="adding()"
-          (click)="addToWishlist()"
+          (click)="addToWaitlist()"
           class="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-          [class]="isAlreadyInWishlist()
+          [class]="isAlreadyInWaitlist()
             ? 'bg-[#233827] border border-[#4c6b22] text-[#beee11]'
             : 'bg-[#4c6b22] hover:bg-[#5a7f29] active:scale-[0.99] text-white border border-[#75a634]/40'"
         >
           @if (adding()) {
             <mat-icon class="!text-[20px] !w-5 !h-5 !leading-none overflow-visible shrink-0 animate-spin">refresh</mat-icon>
             <span class="leading-normal">Atualizando...</span>
-          } @else if (isAlreadyInWishlist()) {
+          } @else if (isAlreadyInWaitlist()) {
             <mat-icon class="!text-[20px] !w-5 !h-5 !leading-none overflow-visible shrink-0 text-[#beee11]">check_circle</mat-icon>
             <span class="leading-normal">Na Waitlist · Remover</span>
           } @else {
@@ -304,16 +305,168 @@
           </p-card>
         }
       </section>
+      } @else {
+        <p-skeleton width="100%" height="44px" borderRadius="12px"></p-skeleton>
+        <section class="space-y-2">
+          <p-skeleton width="8rem" height="0.75rem" borderRadius="6px"></p-skeleton>
+          <div class="flex flex-wrap gap-1.5">
+            @for (i of [1,2,3,4,5,6]; track i) {
+              <p-skeleton width="4.5rem" height="1.5rem" borderRadius="999px"></p-skeleton>
+            }
+          </div>
+        </section>
+        <section class="space-y-3">
+          <p-skeleton width="7rem" height="0.75rem" borderRadius="6px"></p-skeleton>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            @for (i of [1,2,3,4,5,6]; track i) {
+              <p-skeleton width="100%" height="4.5rem" borderRadius="10px"></p-skeleton>
+            }
+          </div>
+        </section>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <p-skeleton width="100%" height="7.5rem" borderRadius="10px"></p-skeleton>
+          <p-skeleton width="100%" height="7.5rem" borderRadius="10px"></p-skeleton>
+        </div>
+      }
+
+      <section class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+            <mat-icon class="!text-base !w-4 !h-4 text-[#66C0F4]">card_membership</mat-icon>
+            <span>Assinaturas</span>
+          </h2>
+        </div>
+
+        @if (loadingSubs()) {
+          <div class="flex flex-col gap-2.5">
+            @for (i of [1,2]; track i) {
+              <div class="flex items-center gap-3 rounded-[10px] bg-[#1b2838]/60 border border-white/10 p-3">
+                <p-skeleton shape="circle" size="2.25rem"></p-skeleton>
+                <div class="flex-1 min-w-0 space-y-2">
+                  <p-skeleton width="55%" height="0.85rem" borderRadius="6px"></p-skeleton>
+                  <p-skeleton width="30%" height="0.6rem" borderRadius="6px"></p-skeleton>
+                </div>
+              </div>
+            }
+          </div>
+        } @else if (subscriptions().length > 0) {
+          <div class="flex flex-col gap-2.5">
+            @for (sub of subscriptions(); track sub.id || sub.name) {
+              <p-card styleClass="detail-meta-card">
+                <div class="flex items-center gap-3">
+                  <span class="sub-icon">
+                    @if (sub.shop) {
+                      <app-store-logo [shopId]="sub.shop.id" [shopName]="sub.shop.name" [size]="20" />
+                    } @else {
+                      <mat-icon>workspace_premium</mat-icon>
+                    }
+                  </span>
+                  <div class="min-w-0">
+                    <p class="text-sm font-bold text-white truncate m-0">{{ sub.name }}</p>
+                    @if (sub.shop?.name) {
+                      <p class="text-[11px] text-[#66C0F4] font-semibold uppercase tracking-wider m-0 mt-0.5">
+                        {{ sub.shop.name }}
+                      </p>
+                    }
+                  </div>
+                </div>
+              </p-card>
+            }
+          </div>
+        } @else {
+          <p-card styleClass="detail-meta-card">
+            <p class="text-xs text-white/50 m-0">Este jogo não está listado em assinaturas para o Brasil.</p>
+          </p-card>
+        }
+      </section>
+
+      <section class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+            <mat-icon class="!text-base !w-4 !h-4 text-[#66C0F4]">inventory_2</mat-icon>
+            <span>Bundles</span>
+          </h2>
+        </div>
+
+        @if (loadingBundles()) {
+          <div class="flex flex-col gap-2.5">
+            @for (i of [1,2]; track i) {
+              <div class="flex items-start justify-between gap-3 rounded-[10px] bg-[#1b2838]/60 border border-white/10 p-3">
+                <div class="flex-1 min-w-0 space-y-2">
+                  <p-skeleton width="70%" height="0.9rem" borderRadius="6px"></p-skeleton>
+                  <p-skeleton width="40%" height="0.65rem" borderRadius="6px"></p-skeleton>
+                </div>
+                <p-skeleton width="5.5rem" height="2rem" borderRadius="8px"></p-skeleton>
+              </div>
+            }
+          </div>
+        } @else if (bundles().length > 0) {
+          <div class="flex flex-col gap-2.5">
+            @for (bundle of bundles(); track bundle.id) {
+              <p-card styleClass="detail-meta-card">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="text-sm font-bold text-white m-0">{{ bundle.title }}</p>
+                    @if (bundle.expiry) {
+                      <p class="text-[11px] text-white/50 m-0 mt-1">
+                        Expira em {{ formatDate(bundle.expiry) }}
+                      </p>
+                    }
+                  </div>
+                  @if (bundle.url || bundle.details) {
+                    <a
+                      [href]="bundle.url || bundle.details"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="shrink-0 px-3 py-1.5 rounded-lg bg-[#66C0F4]/15 hover:bg-[#66C0F4]/25 border border-[#66C0F4]/40 text-[#66C0F4] hover:text-white text-[11px] font-bold flex items-center gap-1 no-underline"
+                    >
+                      <mat-icon class="!text-sm !w-4 !h-4">open_in_new</mat-icon>
+                      <span>Ver bundle</span>
+                    </a>
+                  }
+                </div>
+              </p-card>
+            }
+          </div>
+        } @else {
+          <p-card styleClass="detail-meta-card">
+            <p class="text-xs text-white/50 m-0">Este jogo não está em bundles ativos no Brasil.</p>
+          </p-card>
+        }
+      </section>
 
       <section class="space-y-3">
         <div class="flex items-center justify-between">
           <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
             <mat-icon class="!text-base !w-4 !h-4 text-[#beee11]">local_offer</mat-icon>
-            <span>Ofertas e Preços Atuais ({{ gamePrices().length }})</span>
+            <span>Ofertas e Preços Atuais{{ loading() ? '' : ' (' + gamePrices().length + ')' }}</span>
           </h2>
         </div>
 
-        @if (gamePrices().length > 0) {
+        @if (loading()) {
+          <div class="flex flex-col gap-3.5">
+            @for (i of [1,2,3]; track i) {
+              <div class="rounded-xl bg-[#1e2d40]/70 border border-[#66C0F4]/15 p-4 space-y-3">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="flex-1 space-y-2">
+                    <p-skeleton width="9rem" height="1rem" borderRadius="6px"></p-skeleton>
+                    <p-skeleton width="70%" height="0.7rem" borderRadius="6px"></p-skeleton>
+                  </div>
+                  <div class="space-y-2 flex flex-col items-end">
+                    <p-skeleton width="3.5rem" height="1.1rem" borderRadius="6px"></p-skeleton>
+                    <p-skeleton width="5rem" height="1.35rem" borderRadius="6px"></p-skeleton>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+                  @for (j of [1,2,3,4]; track j) {
+                    <p-skeleton width="100%" height="2.4rem" borderRadius="8px"></p-skeleton>
+                  }
+                </div>
+                <p-skeleton width="100%" height="2.25rem" borderRadius="8px"></p-skeleton>
+              </div>
+            }
+          </div>
+        } @else if (gamePrices().length > 0) {
           <div class="flex flex-col gap-3.5">
             @for (deal of gamePrices(); track deal.shop?.id || $index) {
               <p-card class="block" styleClass="deal-price-card">
@@ -321,7 +474,10 @@
                   <div class="flex items-start justify-between gap-3">
                     <div class="space-y-1 min-w-0">
                       <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-base font-bold text-white">{{ deal.shop?.name }}</span>
+                        <span class="inline-flex items-center gap-1.5 text-base font-bold text-white">
+                          <app-store-logo [shopId]="deal.shop?.id" [shopName]="deal.shop?.name" [size]="18" />
+                          {{ deal.shop?.name }}
+                        </span>
                         <span class="text-[10px] text-white/40 font-mono">ID #{{ deal.shop?.id }}</span>
                         @if (deal.flag) {
                           <span class="px-1.5 py-0.5 rounded bg-[#66C0F4]/20 border border-[#66C0F4]/40 text-[#66C0F4] text-[10px] font-bold">
@@ -439,8 +595,15 @@
         </div>
 
         @if (loadingHistory()) {
-          <div class="h-64 bg-[#1B2838]/20 rounded-xl p-4 flex items-center justify-center">
-            <p-skeleton width="95%" height="85%"></p-skeleton>
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              @for (i of [1,2,3,4]; track i) {
+                <p-skeleton width="100%" height="3.5rem" borderRadius="10px"></p-skeleton>
+              }
+            </div>
+            <div class="rounded-xl bg-[#1B2838]/40 border border-white/10 p-4">
+              <p-skeleton width="100%" height="14rem" borderRadius="10px"></p-skeleton>
+            </div>
           </div>
         } @else if (historyShops().length > 0) {
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -452,7 +615,7 @@
                 <div class="store-card-inner">
                   <span class="store-active-bar"></span>
                   <div class="store-icon-box">
-                    <mat-icon class="store-icon">{{ shop.icon }}</mat-icon>
+                    <app-store-logo [shopId]="shop.id" [shopName]="shop.name" [size]="18" />
                   </div>
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-1">

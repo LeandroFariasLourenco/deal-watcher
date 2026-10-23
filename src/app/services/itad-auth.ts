@@ -75,12 +75,12 @@ export class ItadAuthService {
     this.loggedIn.set(true);
   }
 
-  async login(returnUrl = '/wishlist'): Promise<void> {
+  async login(returnUrl = '/waitlist'): Promise<void> {
     const codeVerifier = generateRandomString(64);
     sessionStorage.setItem(ITAD_CODE_VERIFIER_KEY, codeVerifier);
     const state = generateRandomString(32);
     sessionStorage.setItem(STATE_KEY, state);
-    sessionStorage.setItem(RETURN_KEY, returnUrl || '/wishlist');
+    sessionStorage.setItem(RETURN_KEY, returnUrl || '/waitlist');
 
     const hashed = await sha256(codeVerifier);
     const codeChallenge = base64urlencode(hashed);
@@ -100,9 +100,13 @@ export class ItadAuthService {
   }
 
   consumeReturnUrl(): string {
-    const value = sessionStorage.getItem(RETURN_KEY) || '/wishlist';
+    const value = sessionStorage.getItem(RETURN_KEY) || '/waitlist';
     sessionStorage.removeItem(RETURN_KEY);
-    return value.startsWith('/') ? value : '/wishlist';
+    if (!value.startsWith('/')) return '/waitlist';
+    if (value === '/wishlist' || value.startsWith('/wishlist?')) {
+      return value.replace('/wishlist', '/waitlist');
+    }
+    return value;
   }
 
   async completeLogin(code: string, state: string): Promise<void> {

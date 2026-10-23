@@ -44,6 +44,39 @@ body {
   user-select: none;
 }
 
+body.is-deals-tab {
+  overflow-x: visible;
+}
+
+app-deals,
+app-search,
+app-waitlist,
+app-giveaways,
+app-details {
+  animation: tab-fade-in 220ms ease both;
+}
+
+@keyframes tab-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  app-deals,
+  app-search,
+  app-waitlist,
+  app-giveaways,
+  app-details {
+    animation: none !important;
+  }
+}
+
 .font-thin,
 .font-extralight,
 .font-light {
@@ -84,7 +117,6 @@ body {
   display: block;
 }
 
-/* Covers the Steam DLC corner ribbon baked into banner art. */
 .dlc-strip {
   position: absolute;
   top: 0;
@@ -95,34 +127,23 @@ body {
   justify-content: center;
   box-sizing: border-box;
   width: 46%;
-  height: 48%;
-  min-width: 2.75rem;
-  min-height: 1.35rem;
-  padding: 0 0.4rem;
+  max-width: 9.5rem;
+  height: 1.55rem;
+  padding: 0 0.55rem;
   background-color: #8e45c0;
   color: #ffffff;
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   line-height: 1;
+  text-transform: uppercase;
+  border-bottom-right-radius: 0.35rem;
   pointer-events: none;
 }
 
 .game-thumb:has(.dlc-strip) .rank-badge {
   left: auto;
   right: 0.25rem;
-}
-
-@media (min-width: 640px) {
-  .game-thumb .dlc-strip {
-    width: 2.85rem;
-    height: 2.2rem;
-    min-width: 0;
-    min-height: 0;
-    padding: 0 0.3rem;
-    font-size: 0.6875rem;
-    letter-spacing: 0.06em;
-  }
 }
 
 @media (min-width: 640px) {
@@ -215,6 +236,33 @@ body {
   }
 }
 
+.notify-badge {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.15rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #66c0f4;
+  box-shadow: 0 0 0 0 rgba(102, 192, 244, 0.75);
+  animation: notify-glow 1.7s ease-out infinite;
+}
+
+@keyframes notify-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(102, 192, 244, 0.75);
+    opacity: 1;
+  }
+  70% {
+    box-shadow: 0 0 0 0.45rem rgba(102, 192, 244, 0);
+    opacity: 0.85;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(102, 192, 244, 0);
+    opacity: 1;
+  }
+}
+
 .watchlist-btn {
   display: none;
   align-items: center;
@@ -285,6 +333,59 @@ body {
 
 .cascade-item {
   will-change: transform, opacity;
+}
+
+.p-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.p-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.14),
+    transparent
+  );
+  animation: skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.img-shimmer-host {
+  position: relative;
+}
+
+.img-shimmer-overlay {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.img-shimmer-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.14),
+    transparent
+  );
+  animation: skeleton-shimmer 1.35s ease-in-out infinite;
 }
 
 .p-toast {

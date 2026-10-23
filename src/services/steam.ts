@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { cache, CACHE_TTL, COLLECTIONS } from './cache';
 
 export interface SteamWishlistItem {
   name: string;
@@ -31,6 +32,10 @@ export class SteamService {
    * Note: This uses the public wishlist JSON endpoint which often works without an API key if the profile is public.
    */
   async getWishlist(steamId: string): Promise<Record<string, SteamWishlistItem>> {
+    const cacheKey = `wishlist:${steamId.toLowerCase()}`;
+    const cached = await cache.get<Record<string, SteamWishlistItem>>(COLLECTIONS.STEAM, cacheKey);
+    if (cached) return cached;
+
     try {
       // First attempt to treat steamId as a direct ID
       const url = `https://store.steampowered.com/wishlist/profiles/${steamId}/wishlistdata/`;
@@ -40,10 +45,18 @@ export class SteamService {
         // Might be a vanity URL or private
         const vanityUrl = `https://store.steampowered.com/wishlist/id/${steamId}/wishlistdata/`;
         const vanityResponse = await axios.get(vanityUrl);
-        return vanityResponse.data;
+        const vanityData = vanityResponse.data;
+        if (vanityData && typeof vanityData === 'object') {
+          await cache.set(COLLECTIONS.STEAM, cacheKey, vanityData, CACHE_TTL.STEAM_WISHLIST);
+        }
+        return vanityData;
       }
-      
-      return response.data;
+
+      const data = response.data;
+      if (data && typeof data === 'object') {
+        await cache.set(COLLECTIONS.STEAM, cacheKey, data, CACHE_TTL.STEAM_WISHLIST);
+      }
+      return data;
     } catch (error) {
       console.error('Steam Wishlist Error:', error);
       throw new Error('Could not fetch Steam wishlist. Make sure the profile and wishlist are public.');
