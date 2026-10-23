@@ -35,7 +35,8 @@ export default defineConfig(() => {
           'icons/stores/*.jpg'
         ],
         injectManifest: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,webp}']
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,webp}'],
+          maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         },
         devOptions: {
           enabled: true,
