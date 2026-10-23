@@ -62,10 +62,13 @@
         class="deals-swiper"
         slides-per-view="auto"
         space-between="14"
-        free-mode="true"
         grab-cursor="true"
         observer="true"
         observe-slide-children="true"
+        speed="420"
+        resistance-ratio="0.65"
+        long-swipes-ratio="0.2"
+        short-swipes="true"
         (swiperreachend)="onFeedReachEnd(feed.id)"
       >
         @for (deal of feed.items(); track deal.id; let i = $index) {
@@ -80,7 +83,7 @@
         }
 
         @if (feed.loading() || feed.loadingMore()) {
-          @for (i of [1,2,3,4]; track i) {
+          @for (i of skeletonSlots; track i) {
             <swiper-slide class="featured-card-wrap">
               <div class="featured-skeleton">
                 <p-skeleton width="100%" height="7.6rem" borderRadius="0.9rem 0.9rem 0 0"></p-skeleton>

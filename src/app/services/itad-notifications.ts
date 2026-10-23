@@ -1,5 +1,5 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { ITADNotification } from '../../types/itad';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ITADNotification, ITADWaitlistNotificationDetail } from '../../types/itad';
 import { ITADService } from '../../services/itad';
 import { ItadAuthService } from './itad-auth';
 
@@ -17,15 +17,34 @@ interface NotificationsCache {
 export class ItadNotificationsService {
   private readonly auth = inject(ItadAuthService);
   private readonly itad = new ITADService();
+  private readonly detailsInflight = new Map<string, Promise<ITADWaitlistNotificationDetail | null>>();
 
   readonly items = signal<ITADNotification[]>([]);
   readonly loading = signal(false);
+  readonly panelOpen = signal(false);
+  readonly expandedId = signal<string | null>(null);
+  readonly detailsById = signal<Record<string, ITADWaitlistNotificationDetail>>({});
+  readonly detailsLoading = signal<Record<string, boolean>>({});
+  readonly detailsError = signal<Record<string, string>>({});
   readonly hasNotifications = computed(() => this.auth.isLoggedIn() && this.items().length > 0);
 
   constructor() {
-    if (this.auth.isLoggedIn()) {
-      this.items.set(this.readCache()?.items ?? []);
-    }
+    effect(() => {
+      const authenticated = this.auth.isLoggedIn();
+      untracked(() => {
+        if (!authenticated) {
+          this.clear();
+          return;
+        }
+        const cached = this.readCache();
+        if (cached) this.items.set(cached.items);
+        void this.refresh();
+      });
+    });
+  }
+
+  togglePanel() {
+    this.panelOpen.update(open => !open);
   }
 
   async refresh(): Promise<void> {
@@ -46,7 +65,12 @@ export class ItadNotificationsService {
       const items = await this.itad.getNotifications(token);
       this.items.set(items);
       this.writeCache({ items, fetchedAt: Date.now() });
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.message === 'not_authenticated' || error?.status === 401) {
+        this.auth.logout();
+        this.clear();
+        return;
+      }
       this.writeCache({ items: cached?.items ?? this.items(), fetchedAt: Date.now() });
       throw error;
     } finally {
@@ -54,8 +78,70 @@ export class ItadNotificationsService {
     }
   }
 
+  toggleExpanded(id: string) {
+    if (this.expandedId() === id) {
+      this.expandedId.set(null);
+      return;
+    }
+
+    this.expandedId.set(id);
+    const item = this.items().find(notification => notification.id === id);
+    if (item && item.type !== 'waitlist') {
+      this.detailsError.update(map => ({
+        ...map,
+        [id]: 'Este tipo de notificação ainda não possui detalhes.'
+      }));
+      return;
+    }
+    void this.loadDetails(id);
+  }
+
+  async loadDetails(id: string): Promise<ITADWaitlistNotificationDetail | null> {
+    const existing = this.detailsById()[id];
+    if (existing) return existing;
+
+    const pending = this.detailsInflight.get(id);
+    if (pending) return pending;
+
+    this.detailsLoading.update(map => ({ ...map, [id]: true }));
+    this.detailsError.update(map => {
+      const next = { ...map };
+      delete next[id];
+      return next;
+    });
+
+    const request = this.fetchDetails(id).finally(() => {
+      this.detailsInflight.delete(id);
+      this.detailsLoading.update(map => ({ ...map, [id]: false }));
+    });
+    this.detailsInflight.set(id, request);
+    return request;
+  }
+
   clear() {
     this.items.set([]);
+    this.panelOpen.set(false);
+    this.expandedId.set(null);
+    this.detailsById.set({});
+    this.detailsLoading.set({});
+    this.detailsError.set({});
+    this.detailsInflight.clear();
+  }
+
+  private async fetchDetails(id: string): Promise<ITADWaitlistNotificationDetail | null> {
+    try {
+      const token = await this.auth.validAccessToken();
+      const detail = await this.itad.getWaitlistNotification(token, id);
+      this.detailsById.update(map => ({ ...map, [id]: detail }));
+      return detail;
+    } catch (error) {
+      console.error('Failed to load waitlist notification detail', error);
+      this.detailsError.update(map => ({
+        ...map,
+        [id]: 'Não foi possível carregar os detalhes. Tente novamente.'
+      }));
+      return null;
+    }
   }
 
   private readCache(): NotificationsCache | null {

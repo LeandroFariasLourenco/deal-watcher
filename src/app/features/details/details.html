@@ -108,6 +108,27 @@
           }
         </button>
 
+        <button
+          type="button"
+          [disabled]="owning()"
+          (click)="toggleOwned()"
+          class="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          [class]="isOwned()
+            ? 'bg-[#2a3318] border border-[#beee11]/40 text-[#beee11]'
+            : 'bg-[#1B2838] hover:bg-[#243447] active:scale-[0.99] text-white border border-white/15'"
+        >
+          @if (owning()) {
+            <mat-icon class="!text-[20px] !w-5 !h-5 !leading-none overflow-visible shrink-0 animate-spin">refresh</mat-icon>
+            <span class="leading-normal">Atualizando...</span>
+          } @else if (isOwned()) {
+            <mat-icon class="!text-[20px] !w-5 !h-5 !leading-none overflow-visible shrink-0">shopping_bag</mat-icon>
+            <span class="leading-normal">Comprado · Remover</span>
+          } @else {
+            <mat-icon class="!text-[20px] !w-5 !h-5 !leading-none overflow-visible shrink-0">add_shopping_cart</mat-icon>
+            <span class="leading-normal">Marcar como comprado</span>
+          }
+        </button>
+
         @if (info.urls?.game) {
           <a 
             [href]="info.urls.game" 
@@ -120,6 +141,100 @@
           </a>
         }
       </div>
+
+      <section class="space-y-3" [appDeferLoad]="uuid()" (appeared)="reveal('overview')">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
+          <mat-icon class="!text-sm !w-4 !h-4 text-[#beee11]">payments</mat-icon>
+          <span>Resumo de Preços</span>
+        </h2>
+
+        @if (loadingOverview()) {
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            @for (i of [1,2,3]; track i) {
+              <p-card styleClass="detail-meta-card">
+                <div class="space-y-2">
+                  <p-skeleton width="40%" height="0.7rem" borderRadius="6px"></p-skeleton>
+                  <p-skeleton width="70%" height="1.1rem" borderRadius="6px"></p-skeleton>
+                  <p-skeleton width="55%" height="0.8rem" borderRadius="6px"></p-skeleton>
+                </div>
+              </p-card>
+            }
+          </div>
+        } @else {
+          <div [class]="overviewBundled() > 0 ? 'grid grid-cols-1 sm:grid-cols-3 gap-2.5' : 'grid grid-cols-1 sm:grid-cols-2 gap-2.5'">
+            <p-card styleClass="detail-meta-card">
+              <div class="flex flex-col gap-1.5 min-h-[5.5rem]">
+                <span class="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Melhor preço atual</span>
+                @if (overviewCurrent(); as current) {
+                  <div class="flex items-center gap-1.5 text-white">
+                    <app-store-logo [shopId]="current.shop?.id" [shopName]="current.shop?.name" [size]="16" />
+                    <span class="text-xs font-bold truncate">{{ current.shop?.name }}</span>
+                  </div>
+                  <div class="flex flex-wrap items-baseline gap-1.5">
+                    @if (current.cut > 0) {
+                      <span class="bg-[#4c6b22] text-[#beee11] text-[10px] px-1.5 py-0.5 rounded font-bold">-{{ current.cut }}%</span>
+                      <span class="text-xs text-white/45 line-through tabular-nums">{{ formatPrice(current.regular.amount, current.regular.currency) }}</span>
+                    }
+                    <span class="text-base font-bold text-[#beee11] tabular-nums">{{ formatPrice(current.price.amount, current.price.currency) }}</span>
+                  </div>
+                  @if (isOverviewHistoryLow()) {
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-[#beee11]">Menor preço histórico</span>
+                  }
+                  @if (current.voucher) {
+                    <span class="text-[10px] text-amber-300 font-bold">Cupom: {{ current.voucher }}</span>
+                  }
+                  @if (current.url) {
+                    <a
+                      [href]="current.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="mt-auto pt-1 text-[11px] font-bold text-[#66C0F4] hover:text-white no-underline inline-flex items-center gap-1"
+                    >
+                      <mat-icon class="!text-sm !w-4 !h-4">open_in_new</mat-icon>
+                      Abrir oferta
+                    </a>
+                  }
+                } @else {
+                  <p class="text-xs text-white/45 m-0">Sem oferta nas lojas suportadas.</p>
+                }
+              </div>
+            </p-card>
+
+            <p-card styleClass="detail-meta-card">
+              <div class="flex flex-col gap-1.5 min-h-[5.5rem]">
+                <span class="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Menor histórico</span>
+                @if (overviewLowest(); as lowest) {
+                  <div class="flex items-center gap-1.5 text-white">
+                    <app-store-logo [shopId]="lowest.shop?.id" [shopName]="lowest.shop?.name" [size]="16" />
+                    <span class="text-xs font-bold truncate">{{ lowest.shop?.name }}</span>
+                  </div>
+                  <div class="flex flex-wrap items-baseline gap-1.5">
+                    @if (lowest.cut > 0) {
+                      <span class="bg-[#4c6b22] text-[#beee11] text-[10px] px-1.5 py-0.5 rounded font-bold">-{{ lowest.cut }}%</span>
+                    }
+                    <span class="text-base font-bold text-[#66C0F4] tabular-nums">{{ formatPrice(lowest.price.amount, lowest.price.currency) }}</span>
+                  </div>
+                  <span class="text-[11px] text-white/45">{{ formatDateTime(lowest.timestamp) }}</span>
+                } @else {
+                  <p class="text-xs text-white/45 m-0">Histórico indisponível.</p>
+                }
+              </div>
+            </p-card>
+
+            @if (overviewBundled() > 0) {
+              <p-card styleClass="detail-meta-card">
+                <div class="flex flex-col gap-1.5 min-h-[5.5rem]">
+                  <span class="text-[10px] uppercase tracking-wider text-white/40 font-semibold">Bundles ativos</span>
+                  <span class="text-xl font-bold text-white tabular-nums">{{ overviewBundled() }}</span>
+                  <p class="text-[11px] text-white/45 m-0">
+                    {{ overviewBundled() === 1 ? 'bundle inclui este jogo' : 'bundles incluem este jogo' }}
+                  </p>
+                </div>
+              </p-card>
+            }
+          </div>
+        }
+      </section>
 
       @if (gameTags().length > 0) {
         <section class="space-y-2">
@@ -329,7 +444,8 @@
         </div>
       }
 
-      <section class="space-y-3">
+      @if (gameInfo()) {
+      <section class="space-y-3" [appDeferLoad]="uuid()" (appeared)="reveal('subs')">
         <div class="flex items-center justify-between">
           <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
             <mat-icon class="!text-base !w-4 !h-4 text-[#66C0F4]">card_membership</mat-icon>
@@ -355,11 +471,7 @@
               <p-card styleClass="detail-meta-card">
                 <div class="flex items-center gap-3">
                   <span class="sub-icon">
-                    @if (sub.shop) {
-                      <app-store-logo [shopId]="sub.shop.id" [shopName]="sub.shop.name" [size]="20" />
-                    } @else {
-                      <mat-icon>workspace_premium</mat-icon>
-                    }
+                    <app-store-logo [shopId]="sub.shop?.id" [shopName]="sub.shop?.name || sub.name" [size]="20" />
                   </span>
                   <div class="min-w-0">
                     <p class="text-sm font-bold text-white truncate m-0">{{ sub.name }}</p>
@@ -380,7 +492,7 @@
         }
       </section>
 
-      <section class="space-y-3">
+      <section class="space-y-3" [appDeferLoad]="uuid()" (appeared)="reveal('bundles')">
         <div class="flex items-center justify-between">
           <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
             <mat-icon class="!text-base !w-4 !h-4 text-[#66C0F4]">inventory_2</mat-icon>
@@ -435,18 +547,18 @@
         }
       </section>
 
-      <section class="space-y-3">
+      <section class="space-y-3" [appDeferLoad]="uuid()" (appeared)="reveal('prices')">
         <div class="flex items-center justify-between">
           <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
             <mat-icon class="!text-base !w-4 !h-4 text-[#beee11]">local_offer</mat-icon>
-            <span>Ofertas e Preços Atuais{{ loading() ? '' : ' (' + gamePrices().length + ')' }}</span>
+            <span>Ofertas e Preços Atuais{{ loadingPrices() ? '' : ' (' + gamePrices().length + ')' }}</span>
           </h2>
         </div>
 
-        @if (loading()) {
-          <div class="flex flex-col gap-3.5">
-            @for (i of [1,2,3]; track i) {
-              <div class="rounded-xl bg-[#1e2d40]/70 border border-[#66C0F4]/15 p-4 space-y-3">
+        @if (loadingPrices()) {
+          <div class="deal-price-grid">
+            @for (i of [1,2,3,4]; track i) {
+              <div class="deal-price-skeleton">
                 <div class="flex items-start justify-between gap-3">
                   <div class="flex-1 space-y-2">
                     <p-skeleton width="9rem" height="1rem" borderRadius="6px"></p-skeleton>
@@ -457,7 +569,7 @@
                     <p-skeleton width="5rem" height="1.35rem" borderRadius="6px"></p-skeleton>
                   </div>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+                <div class="grid grid-cols-2 gap-2 pt-2">
                   @for (j of [1,2,3,4]; track j) {
                     <p-skeleton width="100%" height="2.4rem" borderRadius="8px"></p-skeleton>
                   }
@@ -467,10 +579,10 @@
             }
           </div>
         } @else if (gamePrices().length > 0) {
-          <div class="flex flex-col gap-3.5">
+          <div class="deal-price-grid">
             @for (deal of gamePrices(); track deal.shop?.id || $index) {
               <p-card class="block" styleClass="deal-price-card">
-                <div class="space-y-3">
+                <div class="deal-price-body">
                   <div class="flex items-start justify-between gap-3">
                     <div class="space-y-1 min-w-0">
                       <div class="flex flex-wrap items-center gap-2">
@@ -530,7 +642,7 @@
                     </div>
                   </div>
 
-                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-white/10 text-[11px]">
+                  <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-[11px]">
                     <div>
                       <span class="block text-white/40 text-[10px] uppercase">Menor na Loja</span>
                       <span class="font-semibold text-white tabular-nums">
@@ -563,7 +675,7 @@
                         [href]="deal.url" 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        class="w-full sm:w-auto px-4 py-2 rounded-lg bg-[#66C0F4]/15 hover:bg-[#66C0F4]/25 border border-[#66C0F4]/40 text-[#66C0F4] hover:text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all no-underline"
+                        class="w-full px-4 py-2 rounded-lg bg-[#66C0F4]/15 hover:bg-[#66C0F4]/25 border border-[#66C0F4]/40 text-[#66C0F4] hover:text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all no-underline"
                       >
                         <mat-icon class="!text-sm !w-4 !h-4">shopping_cart</mat-icon>
                         <span>Ir para {{ deal.shop?.name }}</span>
@@ -581,7 +693,7 @@
         }
       </section>
 
-      <section class="space-y-3">
+      <section class="space-y-3" [appDeferLoad]="uuid()" (appeared)="reveal('history')">
         <div class="flex items-center justify-between">
           <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
             <mat-icon class="!text-base !w-4 !h-4 text-[#66C0F4]">timeline</mat-icon>
@@ -652,6 +764,149 @@
           </p-card>
         }
       </section>
+
+      @if (steamAppId()) {
+      <div class="steam-defer-slot" [appDeferLoad]="uuid()" (appeared)="reveal('news')">
+        @if (loadingSteamNews() || steamNews().length > 0) {
+        <section class="space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+              <mat-icon class="!text-base !w-4 !h-4 text-[#66C0F4]">newspaper</mat-icon>
+              <span>Notícias da Steam</span>
+            </h2>
+            @if (!loadingSteamNews() && steamNews().length > 0) {
+              <span class="text-xs text-white/45 font-semibold">{{ steamNews().length }} {{ steamNews().length === 1 ? 'item' : 'itens' }}</span>
+            }
+          </div>
+
+          @if (loadingSteamNews()) {
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              @for (i of [1,2,3,4]; track i) {
+                <p-card styleClass="detail-meta-card">
+                  <div class="space-y-2">
+                    <p-skeleton width="35%" height="0.7rem" borderRadius="6px"></p-skeleton>
+                    <p-skeleton width="90%" height="1rem" borderRadius="6px"></p-skeleton>
+                    <p-skeleton width="100%" height="3.2rem" borderRadius="8px"></p-skeleton>
+                  </div>
+                </p-card>
+              }
+            </div>
+          } @else {
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              @for (item of steamNews(); track item.gid) {
+                <a class="steam-news-link" [href]="item.url" target="_blank" rel="noopener noreferrer">
+                  <p-card styleClass="detail-meta-card steam-news-card">
+                    <article class="steam-news">
+                      <div class="steam-news-head">
+                        <span class="steam-news-feed">{{ item.feedlabel }}</span>
+                        @if (formatUnixDate(item.date); as date) {
+                          <span class="steam-news-date">{{ date }}</span>
+                        }
+                      </div>
+                      <h3 class="steam-news-title">{{ item.title }}</h3>
+                      @if (item.excerpt) {
+                        <p class="steam-news-excerpt">{{ item.excerpt }}</p>
+                      }
+                      <span class="steam-news-open">
+                        Abrir notícia
+                        <mat-icon>open_in_new</mat-icon>
+                      </span>
+                    </article>
+                  </p-card>
+                </a>
+              }
+            </div>
+          }
+        </section>
+        }
+      </div>
+
+      <div class="steam-defer-slot" [appDeferLoad]="uuid()" (appeared)="reveal('reviews')">
+        @if (loadingSteamReviews() || steamReviews().length > 0 || (steamReviewsOpened() && steamReviewType() !== 0)) {
+        <section class="space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+              <mat-icon class="!text-base !w-4 !h-4 text-[#66C0F4]">rate_review</mat-icon>
+              <span>Análises da Steam</span>
+            </h2>
+            <div class="flex flex-wrap items-center gap-2">
+              @if (steamReviewSummary(); as summary) {
+                <span class="text-xs text-[#beee11] font-semibold bg-[#beee11]/10 border border-[#beee11]/20 px-2 py-0.5 rounded">
+                  {{ summary.review_score_desc }}
+                  @if (summary.total_reviews) {
+                    · {{ formatNumber(summary.total_reviews) }}
+                  }
+                </span>
+              }
+              @if (steamReviewsPageUrl(); as reviewsUrl) {
+                <a
+                  class="steam-reviews-all"
+                  [href]="reviewsUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Ver todas
+                  <mat-icon>open_in_new</mat-icon>
+                </a>
+              }
+            </div>
+          </div>
+
+          <div class="steam-review-filters" role="group" aria-label="Tipo de análise">
+            @for (option of steamReviewTypeOptions; track option.value) {
+              <button
+                type="button"
+                class="steam-review-filter"
+                [class.is-active]="steamReviewType() === option.value"
+                (click)="setSteamReviewType(option.value)"
+              >
+                {{ option.label }}
+              </button>
+            }
+          </div>
+
+          @if (loadingSteamReviews()) {
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              @for (i of [1,2,3,4]; track i) {
+                <p-card styleClass="detail-meta-card">
+                  <div class="space-y-2">
+                    <p-skeleton width="40%" height="0.8rem" borderRadius="6px"></p-skeleton>
+                    <p-skeleton width="100%" height="4.5rem" borderRadius="8px"></p-skeleton>
+                    <p-skeleton width="55%" height="0.7rem" borderRadius="6px"></p-skeleton>
+                  </div>
+                </p-card>
+              }
+            </div>
+          } @else if (steamReviews().length > 0) {
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              @for (review of steamReviews(); track review.recommendationid) {
+                <p-card styleClass="detail-meta-card steam-review-card">
+                  <div class="steam-review">
+                    <div class="steam-review-head">
+                      <span class="steam-review-verdict" [class.is-up]="review.voted_up" [class.is-down]="!review.voted_up">
+                        <mat-icon>{{ review.voted_up ? 'thumb_up' : 'thumb_down' }}</mat-icon>
+                        {{ review.voted_up ? 'Recomendado' : 'Não recomendado' }}
+                      </span>
+                      @if (formatUnixDate(review.timestamp_created); as date) {
+                        <span class="steam-review-date">{{ date }}</span>
+                      }
+                    </div>
+                    <p class="steam-review-body">{{ review.review || 'Sem texto.' }}</p>
+                    <p class="steam-review-meta">{{ formatPlaytime(review.author?.playtime_at_review || review.author?.playtime_forever) }}</p>
+                  </div>
+                </p-card>
+              }
+            </div>
+          } @else if (steamReviewsOpened() && steamReviewType() !== 0) {
+            <p-card styleClass="detail-meta-card">
+              <p class="text-xs text-white/50 m-0">Nenhuma análise neste filtro.</p>
+            </p-card>
+          }
+        </section>
+        }
+      </div>
+      }
+      }
     </div>
   }
 </div>

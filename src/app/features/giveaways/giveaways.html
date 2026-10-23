@@ -36,6 +36,9 @@
       @for (item of giveaways(); track item.id || $index; let i = $index) {
         <a [href]="item.url || '#'" target="_blank" rel="noopener noreferrer" class="giveaway-card cascade-item flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px] no-underline">
           <div class="game-thumb relative w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
+            @if (isOwnedGiveaway(item)) {
+              <span class="owned-chip list-owned">Comprado</span>
+            }
             @if (getGameBanner(item)) {
               <img [src]="getGameBanner(item)" 
                    [alt]="item.title" 

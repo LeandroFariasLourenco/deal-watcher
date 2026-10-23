@@ -24,6 +24,9 @@
           <mat-icon>image</mat-icon>
         </div>
       }
+      @if (owned.isOwned(game().id)) {
+        <span class="owned-chip featured-owned">Comprado</span>
+      }
       @if (isHistoryLow()) {
         <span class="featured-low">
           <mat-icon>emoji_events</mat-icon>
@@ -56,6 +59,9 @@
     <span class="rank-badge absolute top-1 left-1 z-10 w-4 h-4 rounded bg-black/75 backdrop-blur-sm border border-white/20 text-[9px] font-bold text-white flex items-center justify-center tabular-nums">
       {{ position }}
     </span>
+  }
+  @if (owned.isOwned(game().id)) {
+    <span class="owned-chip list-owned">Comprado</span>
   }
   @if (game().assets?.banner300) {
     <img

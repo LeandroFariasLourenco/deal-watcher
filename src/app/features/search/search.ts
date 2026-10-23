@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MatIconModule } from '@angular/material/icon';
 import { WaitlistService } from '../../services/waitlist';
+import { OwnedGamesService } from '../../services/owned-games';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { SearchStateService } from '../../services/search-state';
@@ -39,6 +40,7 @@ import { animate, stagger } from 'motion';
 export class Search implements OnInit {
   private itadApi = inject(ItadApiService);
   public waitlist = inject(WaitlistService);
+  readonly owned = inject(OwnedGamesService);
   private messageService = inject(MessageService);
   private searchState = inject(SearchStateService);
   private el = inject(ElementRef);

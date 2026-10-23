@@ -31,7 +31,7 @@ export class ItadAuthService {
   readonly accessToken = signal<string | null>(null);
 
   isLoggedIn(): boolean {
-    return this.loggedIn();
+    return this.loggedIn() && !!this.accessToken();
   }
 
   redirectUri(): string {

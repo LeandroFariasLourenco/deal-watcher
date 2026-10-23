@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ItadAuthService } from '../../services/itad-auth';
 import { WaitlistService } from '../../services/waitlist';
 import { ItadNotificationsService } from '../../services/itad-notifications';
+import { OwnedGamesService } from '../../services/owned-games';
 
 @Component({
   selector: 'app-auth-callback',
@@ -22,6 +23,7 @@ export class AuthCallback implements OnInit {
   private auth = inject(ItadAuthService);
   private waitlist = inject(WaitlistService);
   private notifications = inject(ItadNotificationsService);
+  private owned = inject(OwnedGamesService);
 
   message = signal('Conectando à sua conta IsThereAnyDeal...');
   error = signal<string | null>(null);
@@ -51,6 +53,7 @@ export class AuthCallback implements OnInit {
       await Promise.all([
         this.waitlist.refresh().catch(() => undefined),
         this.notifications.refresh().catch(() => undefined),
+        this.owned.refresh().catch(() => undefined),
       ]);
       const target = this.auth.consumeReturnUrl();
       await this.router.navigateByUrl(target);

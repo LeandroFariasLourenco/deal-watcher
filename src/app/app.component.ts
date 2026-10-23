@@ -29,8 +29,7 @@ export class AppComponent {
 
   constructor() {
     effect(() => {
-      const isDeals = this.nav.currentTab() === 'deals';
-      document.body.classList.toggle('is-deals-tab', isDeals);
+      document.body.classList.toggle('is-deals-tab', this.nav.isDealsList());
     });
 
     afterNextRender(() => {

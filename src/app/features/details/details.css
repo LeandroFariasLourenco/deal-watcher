@@ -40,7 +40,25 @@
   padding: 0 !important;
 }
 
+.deal-price-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: 0.65rem;
+  align-items: stretch;
+}
+
+.deal-price-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 12px;
+  background: rgba(30, 45, 64, 0.7);
+  border: 1px solid rgba(102, 192, 244, 0.15);
+}
+
 :host ::ng-deep .deal-price-card.p-card {
+  height: 100%;
   background: linear-gradient(145deg, #1e2d40 0%, #16202d 100%) !important;
   border: 1px solid rgba(102, 192, 244, 0.2) !important;
   border-radius: 12px !important;
@@ -49,11 +67,24 @@
 }
 
 :host ::ng-deep .deal-price-card .p-card-body {
-  padding: 0.875rem 1rem !important;
+  height: 100%;
+  padding: 0.5rem 0.65rem !important;
 }
 
 :host ::ng-deep .deal-price-card .p-card-content {
+  height: 100%;
   padding: 0 !important;
+}
+
+.deal-price-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  height: 100%;
+}
+
+.deal-price-body .pt-1 {
+  margin-top: auto;
 }
 
 .sub-icon {
@@ -73,6 +104,10 @@
   height: 18px;
   font-size: 18px;
   color: #66c0f4;
+}
+
+.sub-icon app-store-logo {
+  display: flex;
 }
 
 :host ::ng-deep .detail-tag.p-tag {
@@ -186,16 +221,206 @@
   color: #66C0F4;
 }
 
+:host ::ng-deep .steam-review-card {
+  height: 100%;
+}
+
+.steam-review {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-height: 100%;
+}
+
+.steam-review-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.steam-review-verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.steam-review-verdict mat-icon {
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+}
+
+.steam-review-verdict.is-up {
+  color: #beee11;
+}
+
+.steam-review-verdict.is-down {
+  color: #f87171;
+}
+
+.steam-review-date {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+}
+
+.steam-review-body {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.78);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 9.5rem;
+  overflow-y: auto;
+}
+
+.steam-review-meta {
+  margin: 0;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.steam-defer-slot {
+  min-height: 1px;
+}
+
+.steam-news-link {
+  display: block;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+:host ::ng-deep .steam-news-card {
+  height: 100%;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+:host ::ng-deep .steam-news-link:hover .steam-news-card {
+  border-color: rgba(102, 192, 244, 0.35) !important;
+}
+
+.steam-news {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-height: 100%;
+}
+
+.steam-news-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.steam-news-feed {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #66c0f4;
+}
+
+.steam-news-date {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+}
+
+.steam-news-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #fff;
+}
+
+.steam-news-excerpt {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.steam-news-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: auto;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #66c0f4;
+}
+
+.steam-review-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.steam-review-filter {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(27, 40, 56, 0.85);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.steam-review-filter:hover {
+  border-color: rgba(102, 192, 244, 0.45);
+  color: #fff;
+}
+
+.steam-review-filter.is-active {
+  background: rgba(102, 192, 244, 0.16);
+  border-color: #66c0f4;
+  color: #66c0f4;
+}
+
+.steam-reviews-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #66c0f4;
+  text-decoration: none;
+}
+
+.steam-reviews-all:hover {
+  color: #fff;
+}
+
+.steam-reviews-all mat-icon {
+  width: 13px;
+  height: 13px;
+  font-size: 13px;
+}
+
+.steam-news-open mat-icon {
+  width: 13px;
+  height: 13px;
+  font-size: 13px;
+}
+
 @media (max-width: 639px) {
   :host ::ng-deep .detail-meta-card .p-card-body {
     padding: 0.45rem 0.6rem !important;
   }
 
-  :host ::ng-deep .deal-price-card .p-card-body {
-    padding: 0.5rem 0.65rem !important;
-  }
-
-  :host ::ng-deep .deal-price-card .space-y-3 > :not([hidden]) ~ :not([hidden]),
   :host ::ng-deep .detail-meta-card .space-y-2\.5 > :not([hidden]) ~ :not([hidden]) {
     margin-top: 0.35rem !important;
   }

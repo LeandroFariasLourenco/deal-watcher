@@ -6,7 +6,7 @@ export interface CacheEntry<T> {
 }
 
 const DB_NAME = 'itad_collection_cache_db';
-const DB_VERSION = 4;
+const DB_VERSION = 6;
 const MINUTE = 1000 * 60;
 const HOUR = MINUTE * 60;
 const DAY = HOUR * 24;
@@ -23,7 +23,9 @@ export const COLLECTIONS = {
   GIVEAWAYS: 'giveaways',
   SHOPS: 'shops',
   STEAM: 'steam',
-  GGDEALS: 'ggdeals'
+  GGDEALS: 'ggdeals',
+  NOTIFICATION_DETAILS: 'notification_details',
+  OVERVIEW: 'game_overview'
 } as const;
 
 export const CACHE_TTL = {
@@ -41,7 +43,11 @@ export const CACHE_TTL = {
   SHOPS: DAY * 30,
   STEAM_SEARCH: HOUR,
   STEAM_WISHLIST: MINUTE * 15,
-  GGDEALS: MINUTE * 15
+  STEAM_REVIEWS: HOUR,
+  STEAM_NEWS: HOUR,
+  GGDEALS: MINUTE * 15,
+  NOTIFICATION_DETAILS: HOUR,
+  OVERVIEW: MINUTE * 15
 } as const;
 
 export type CollectionName = typeof COLLECTIONS[keyof typeof COLLECTIONS];

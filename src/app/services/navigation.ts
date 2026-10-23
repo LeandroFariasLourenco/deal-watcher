@@ -1,4 +1,4 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { Router, NavigationEnd, NavigationStart } from '@angular/router';
 
 export type MainTab = 'deals' | 'search' | 'waitlist' | 'giveaways';
@@ -16,6 +16,9 @@ export class NavigationService {
   private queuedTab: MainTab | null = null;
 
   currentTab = signal<MainTab>('deals');
+  isDetailsPage = signal(false);
+  isDealsList = computed(() => this.currentTab() === 'deals' && !this.isDetailsPage());
+  useAppRail = computed(() => !this.isDealsList());
 
   constructor() {
     this.router.events.subscribe(event => {
@@ -66,6 +69,8 @@ export class NavigationService {
     const queryParams = new URLSearchParams(url.includes('?') ? url.split('?')[1] : '');
     const fromParam = queryParams.get('from');
 
+    this.isDetailsPage.set(cleanUrl.startsWith('/details'));
+
     if (cleanUrl.startsWith('/deals')) {
       this.currentTab.set('deals');
     } else if (cleanUrl.startsWith('/search')) {
@@ -76,10 +81,9 @@ export class NavigationService {
       this.currentTab.set('giveaways');
     } else if (cleanUrl.startsWith('/details')) {
       const fromTab = fromParam === 'wishlist' ? 'waitlist' : fromParam;
-      if (fromTab && MAIN_TABS.includes(fromTab)) {
-        this.currentTab.set(fromTab);
+      if (fromTab && MAIN_TABS.includes(fromTab as MainTab)) {
+        this.currentTab.set(fromTab as MainTab);
       }
-      // If no fromParam, keep currentTab as is!
     }
   }
 

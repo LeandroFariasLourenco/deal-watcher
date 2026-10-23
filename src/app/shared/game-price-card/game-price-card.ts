@@ -5,6 +5,7 @@ import { MessageService } from 'primeng/api';
 import { DealItem } from '../../services/deals-state';
 import { TimeService } from '../../services/time';
 import { WaitlistService } from '../../services/waitlist';
+import { OwnedGamesService } from '../../services/owned-games';
 import { StoreLogo } from '../store-logo/store-logo';
 import { ImgShimmerDirective } from '../img-shimmer';
 
@@ -37,6 +38,7 @@ export class GamePriceCard {
 
   timeService = inject(TimeService);
   waitlist = inject(WaitlistService);
+  owned = inject(OwnedGamesService);
   private messageService = inject(MessageService);
 
   formatPrice(amount: number | null | undefined) {

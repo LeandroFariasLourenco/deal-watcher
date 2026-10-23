@@ -60,6 +60,49 @@ export interface ITADGameDetails {
   history: ITADHistoryPrice[];
 }
 
+export interface ITADOverviewDeal {
+  shop: {
+    id: number;
+    name: string;
+  };
+  price: ITADMoney;
+  regular: ITADMoney;
+  cut: number;
+  voucher?: string | null;
+  flag?: string | null;
+  drm?: Array<{ id: number; name: string } | string>;
+  platforms?: Array<{ id: number; name: string } | string>;
+  timestamp: string;
+  expiry?: string | null;
+  url?: string;
+}
+
+export interface ITADOverviewLow {
+  shop: {
+    id: number;
+    name: string;
+  };
+  price: ITADMoney;
+  regular: ITADMoney;
+  cut: number;
+  timestamp: string;
+}
+
+export interface ITADOverviewPrice {
+  id: string;
+  current: ITADOverviewDeal | null;
+  lowest: ITADOverviewLow | null;
+  bundled: number;
+  urls?: {
+    game?: string;
+  };
+}
+
+export interface ITADGamesOverview {
+  prices: ITADOverviewPrice[];
+  bundles: ITADGameBundle[];
+}
+
 export interface ITADGameSub {
   id: number | string;
   name: string;
@@ -79,17 +122,30 @@ export interface ITADGameBundle {
   note?: string | null;
 }
 
-export interface ITADPriceResponse {
-  [uuid: string]: {
-    id: string;
-    deals: ITADPrice[];
-  };
+export interface ITADHistoryLowSet {
+  all: ITADMoney | null;
+  y1: ITADMoney | null;
+  m3: ITADMoney | null;
 }
+
+export interface ITADGamePrices {
+  id: string;
+  historyLow: ITADHistoryLowSet;
+  deals: ITADPrice[];
+}
+
+export type ITADPriceResponse = ITADGamePrices[];
 
 export interface ITADShop {
   id: number;
   name: string;
   title: string;
+}
+
+export interface ITADMoney {
+  amount: number;
+  amountInt: number;
+  currency: string;
 }
 
 export interface ITADNotification {
@@ -98,6 +154,42 @@ export interface ITADNotification {
   title: string;
   timestamp: string;
   read: string | null;
+}
+
+export interface ITADNotificationDeal {
+  shop: {
+    id: number;
+    name: string;
+  };
+  price: ITADMoney;
+  regular: ITADMoney;
+  cut: number;
+  voucher: string | null;
+  storeLow: ITADMoney | null;
+  flag: string | null;
+  drm: Array<{ id: number; name: string } | string>;
+  platforms: Array<{ id: number; name: string }>;
+  timestamp: string;
+  expiry: string | null;
+  url: string;
+}
+
+export interface ITADNotificationGame {
+  id: string;
+  slug: string;
+  title: string;
+  type: string;
+  mature: boolean;
+  historyLow: ITADMoney | null;
+  lastPrice: ITADMoney | null;
+  deals: ITADNotificationDeal[];
+}
+
+export interface ITADWaitlistNotificationDetail {
+  id: string;
+  timestamp: string;
+  read: string | null;
+  games: ITADNotificationGame[];
 }
 
 export interface ITADWaitlistGame {
@@ -115,3 +207,5 @@ export interface ITADWaitlistGame {
     boxart?: string;
   };
 }
+
+export type ITADIgnoredGame = ITADWaitlistGame;

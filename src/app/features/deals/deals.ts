@@ -63,6 +63,7 @@ export class Deals implements OnInit {
   selectedShops = signal<number[]>([]);
   private loadingShopId = signal<number | 'all' | null>(null);
   limit = 20;
+  readonly skeletonSlots = Array.from({ length: this.limit }, (_, i) => i);
 
   feeds: DealFeed[] = [
     this.createFeed('featured', 'Em destaques', 'auto_awesome', 'rank', true),

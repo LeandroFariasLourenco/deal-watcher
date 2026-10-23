@@ -1,4 +1,5 @@
-import { Component, signal, computed, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, signal, computed, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ItadApiService } from '../../services/itad-api';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -14,8 +15,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { APP_COUNTRY, DEFAULT_SHOP_IDS, ALLOWED_STORE_CONFIG } from '../../shared/constants';
 import { StoreLogo } from '../../shared/store-logo/store-logo';
 import { ImgShimmerDirective } from '../../shared/img-shimmer';
-import { ITADGameBundle, ITADGameSub } from '../../../types/itad';
+import { DeferLoadDirective } from '../../shared/defer-load';
+import { ITADGameBundle, ITADGameSub, ITADOverviewPrice } from '../../../types/itad';
+import { SteamAppReview, SteamNewsItem, SteamReviewSummary, SteamReviewType, SteamReviewTypeValue } from '../../../services/steam';
 import { WaitlistService } from '../../services/waitlist';
+import { OwnedGamesService } from '../../services/owned-games';
+import { RestoreWaitlistPrompt } from '../../shared/restore-waitlist-dialog/restore-waitlist-dialog';
 import { TimeService } from '../../services/time';
 
 export interface HistoryShopItem {
@@ -42,7 +47,8 @@ import { NavigationService } from '../../services/navigation';
     ChartModule,
     MatIconModule,
     StoreLogo,
-    ImgShimmerDirective
+    ImgShimmerDirective,
+    DeferLoadDirective
   ],
   providers: [MessageService],
   templateUrl: './details.html',
@@ -51,8 +57,12 @@ import { NavigationService } from '../../services/navigation';
 export class Details implements OnInit {
   private itadApi = inject(ItadApiService);
   private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
   private messageService = inject(MessageService);
+  private revealed = new Set<string>();
   public waitlist = inject(WaitlistService);
+  public owned = inject(OwnedGamesService);
+  private restoreWaitlist = inject(RestoreWaitlistPrompt);
   public timeService = inject(TimeService);
   public nav = inject(NavigationService);
 
@@ -62,11 +72,28 @@ export class Details implements OnInit {
   subscriptions = signal<ITADGameSub[]>([]);
   bundles = signal<ITADGameBundle[]>([]);
   loading = signal(true);
+  loadingPrices = signal(true);
   loadingHistory = signal(true);
   loadingSubs = signal(true);
   loadingBundles = signal(true);
+  loadingOverview = signal(true);
+  loadingSteamReviews = signal(false);
+  loadingSteamNews = signal(false);
+  overview = signal<ITADOverviewPrice | null>(null);
+  steamReviews = signal<SteamAppReview[]>([]);
+  steamReviewSummary = signal<SteamReviewSummary | null>(null);
+  steamReviewType = signal<SteamReviewTypeValue>(SteamReviewType.All);
+  steamReviewsOpened = signal(false);
+  steamNews = signal<SteamNewsItem[]>([]);
+  readonly steamReviewTypeOptions: Array<{ value: SteamReviewTypeValue; label: string }> = [
+    { value: SteamReviewType.All, label: 'Todas' },
+    { value: SteamReviewType.Positive, label: 'Positivas' },
+    { value: SteamReviewType.Negative, label: 'Negativas' },
+  ];
   adding = signal(false);
+  owning = signal(false);
   isAlreadyInWaitlist = computed(() => this.waitlist.isMonitored(this.uuid()));
+  isOwned = computed(() => this.owned.isOwned(this.uuid()));
   error = signal<string | null>(null);
 
   historyShops = signal<HistoryShopItem[]>([]);
@@ -115,6 +142,14 @@ export class Details implements OnInit {
   gameDevelopers = computed<any[]>(() => this.gameInfo()?.developers || []);
   gamePublishers = computed<any[]>(() => this.gameInfo()?.publishers || []);
   gameReviews = computed<any[]>(() => this.gameInfo()?.reviews || []);
+  steamAppId = computed<number | null>(() => {
+    const appid = Number(this.gameInfo()?.appid);
+    return Number.isInteger(appid) && appid > 0 ? appid : null;
+  });
+  steamReviewsPageUrl = computed(() => {
+    const appId = this.steamAppId();
+    return appId ? `https://steamcommunity.com/app/${appId}/reviews` : null;
+  });
   gameStats = computed(() => this.gameInfo()?.stats || null);
   gamePlayers = computed(() => this.gameInfo()?.players || null);
 
@@ -136,6 +171,16 @@ export class Details implements OnInit {
     return [...prices].sort((a, b) => (a.price?.amount ?? 0) - (b.price?.amount ?? 0))[0];
   });
 
+  overviewCurrent = computed(() => this.overview()?.current || null);
+  overviewLowest = computed(() => this.overview()?.lowest || null);
+  overviewBundled = computed(() => this.overview()?.bundled ?? 0);
+  isOverviewHistoryLow = computed(() => {
+    const current = this.overviewCurrent()?.price?.amount;
+    const lowest = this.overviewLowest()?.price?.amount;
+    if (current == null || lowest == null) return false;
+    return current <= lowest + 0.01;
+  });
+
   ngOnInit() {
     this.initChartOptions();
     this.route.paramMap.subscribe(params => {
@@ -143,10 +188,7 @@ export class Details implements OnInit {
       if (uuid) {
         this.resetGameSignals();
         this.uuid.set(uuid);
-        this.loadDetails(uuid);
-        this.loadHistory(uuid);
-        this.loadSubscriptions(uuid);
-        this.loadBundles(uuid);
+        this.loadInfo(uuid);
       }
     });
   }
@@ -156,14 +198,55 @@ export class Details implements OnInit {
     this.history.set([]);
     this.subscriptions.set([]);
     this.bundles.set([]);
+    this.overview.set(null);
+    this.steamReviews.set([]);
+    this.steamReviewSummary.set(null);
+    this.steamReviewType.set(SteamReviewType.All);
+    this.steamReviewsOpened.set(false);
+    this.steamNews.set([]);
     this.historyShops.set([]);
     this.selectedHistoryShop.set(null);
     this.chartData.set(null);
     this.error.set(null);
+    this.revealed.clear();
     this.loading.set(true);
+    this.loadingPrices.set(true);
     this.loadingHistory.set(true);
     this.loadingSubs.set(true);
     this.loadingBundles.set(true);
+    this.loadingOverview.set(true);
+    this.loadingSteamReviews.set(false);
+    this.loadingSteamNews.set(false);
+  }
+
+  reveal(section: 'overview' | 'prices' | 'subs' | 'bundles' | 'history' | 'reviews' | 'news') {
+    const uuid = this.uuid();
+    if (!uuid || this.revealed.has(section)) return;
+    this.revealed.add(section);
+
+    switch (section) {
+      case 'overview':
+        this.loadOverview(uuid);
+        break;
+      case 'prices':
+        this.loadPrices(uuid);
+        break;
+      case 'subs':
+        this.loadSubscriptions(uuid);
+        break;
+      case 'bundles':
+        this.loadBundles(uuid);
+        break;
+      case 'history':
+        this.loadHistory(uuid);
+        break;
+      case 'reviews':
+        this.loadSteamReviews();
+        break;
+      case 'news':
+        this.loadSteamNews();
+        break;
+    }
   }
 
   initChartOptions() {
@@ -211,38 +294,83 @@ export class Details implements OnInit {
     });
   }
 
-  loadDetails(uuid: string) {
+  loadInfo(uuid: string) {
     this.loading.set(true);
     this.error.set(null);
-    this.itadApi.getGameDetails(uuid, APP_COUNTRY, DEFAULT_SHOP_IDS).subscribe({
-      next: (data) => {
-        if (!data || data.error) {
-          this.error.set(data?.error || 'Erro ao carregar detalhes');
+    this.itadApi.getGameInfo(uuid).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (info) => {
+        if (this.uuid() !== uuid) return;
+        if (!info || info.error) {
+          this.error.set(info?.error || 'Erro ao carregar detalhes');
           this.loading.set(false);
           return;
         }
-        this.details.set(data);
-        if (Array.isArray(data?.history) && data.history.length > 0 && this.history().length === 0) {
-          this.history.set(data.history);
-          this.processHistoryShops(data.history);
-        }
+        this.details.set({
+          info,
+          prices: this.details()?.prices || [],
+          history: []
+        });
         this.loading.set(false);
       },
       error: () => {
+        if (this.uuid() !== uuid) return;
         this.error.set('Falha na comunicação com o servidor');
         this.loading.set(false);
       }
     });
   }
 
+  loadPrices(uuid: string) {
+    this.loadingPrices.set(true);
+    this.itadApi.getGameDeals(uuid, APP_COUNTRY, DEFAULT_SHOP_IDS).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (prices) => {
+        if (this.uuid() !== uuid) return;
+        this.details.update(current => ({
+          info: current?.info || null,
+          prices: Array.isArray(prices) ? prices : [],
+          history: current?.history || []
+        }));
+        this.loadingPrices.set(false);
+      },
+      error: () => {
+        if (this.uuid() !== uuid) return;
+        this.details.update(current => ({
+          info: current?.info || null,
+          prices: current?.prices || [],
+          history: current?.history || []
+        }));
+        this.loadingPrices.set(false);
+      }
+    });
+  }
+
+  loadOverview(uuid: string) {
+    this.loadingOverview.set(true);
+    this.itadApi.getGameOverview(uuid, APP_COUNTRY, DEFAULT_SHOP_IDS).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => {
+        if (this.uuid() !== uuid) return;
+        const prices = Array.isArray(data?.prices) ? data.prices : [];
+        this.overview.set(prices.find(item => item.id === uuid) || prices[0] || null);
+        this.loadingOverview.set(false);
+      },
+      error: () => {
+        if (this.uuid() !== uuid) return;
+        this.overview.set(null);
+        this.loadingOverview.set(false);
+      }
+    });
+  }
+
   loadSubscriptions(uuid: string) {
     this.loadingSubs.set(true);
-    this.itadApi.getGameSubs(uuid, APP_COUNTRY).subscribe({
+    this.itadApi.getGameSubs(uuid, APP_COUNTRY).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
+        if (this.uuid() !== uuid) return;
         this.subscriptions.set(Array.isArray(data) ? data : []);
         this.loadingSubs.set(false);
       },
       error: () => {
+        if (this.uuid() !== uuid) return;
         this.subscriptions.set([]);
         this.loadingSubs.set(false);
       }
@@ -251,12 +379,14 @@ export class Details implements OnInit {
 
   loadBundles(uuid: string) {
     this.loadingBundles.set(true);
-    this.itadApi.getGameBundles(uuid, APP_COUNTRY).subscribe({
+    this.itadApi.getGameBundles(uuid, APP_COUNTRY).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
+        if (this.uuid() !== uuid) return;
         this.bundles.set(Array.isArray(data) ? data : []);
         this.loadingBundles.set(false);
       },
       error: () => {
+        if (this.uuid() !== uuid) return;
         this.bundles.set([]);
         this.loadingBundles.set(false);
       }
@@ -265,18 +395,78 @@ export class Details implements OnInit {
 
   loadHistory(uuid: string) {
     this.loadingHistory.set(true);
-    this.itadApi.getHistory(uuid, APP_COUNTRY, DEFAULT_SHOP_IDS).subscribe({
+    this.itadApi.getHistory(uuid, APP_COUNTRY, DEFAULT_SHOP_IDS).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
+        if (this.uuid() !== uuid) return;
         const list = Array.isArray(data) ? data : [];
         this.history.set(list);
         this.processHistoryShops(list);
         this.loadingHistory.set(false);
       },
       error: () => {
+        if (this.uuid() !== uuid) return;
         this.loadingHistory.set(false);
         this.historyShops.set([]);
         this.selectedHistoryShop.set(null);
         this.chartData.set(null);
+      }
+    });
+  }
+
+  loadSteamNews() {
+    const appId = this.steamAppId();
+    if (!appId) {
+      this.steamNews.set([]);
+      this.loadingSteamNews.set(false);
+      return;
+    }
+
+    this.loadingSteamNews.set(true);
+    this.itadApi.getSteamNews(appId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => {
+        if (this.steamAppId() !== appId) return;
+        this.steamNews.set(Array.isArray(data) ? data : []);
+        this.loadingSteamNews.set(false);
+      },
+      error: () => {
+        if (this.steamAppId() !== appId) return;
+        this.steamNews.set([]);
+        this.loadingSteamNews.set(false);
+      }
+    });
+  }
+
+  setSteamReviewType(type: SteamReviewTypeValue) {
+    if (this.steamReviewType() === type) return;
+    this.steamReviewType.set(type);
+    this.revealed.add('reviews');
+    this.loadSteamReviews();
+  }
+
+  loadSteamReviews() {
+    const appId = this.steamAppId();
+    const reviewType = this.steamReviewType();
+    if (!appId) {
+      this.steamReviews.set([]);
+      this.steamReviewSummary.set(null);
+      this.loadingSteamReviews.set(false);
+      return;
+    }
+
+    this.steamReviewsOpened.set(true);
+    this.loadingSteamReviews.set(true);
+    this.itadApi.getSteamReviews(appId, reviewType).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => {
+        if (this.steamAppId() !== appId || this.steamReviewType() !== reviewType) return;
+        this.steamReviewSummary.set(data?.query_summary || null);
+        this.steamReviews.set(Array.isArray(data?.reviews) ? data.reviews : []);
+        this.loadingSteamReviews.set(false);
+      },
+      error: () => {
+        if (this.steamAppId() !== appId || this.steamReviewType() !== reviewType) return;
+        this.steamReviews.set([]);
+        this.steamReviewSummary.set(null);
+        this.loadingSteamReviews.set(false);
       }
     });
   }
@@ -393,6 +583,40 @@ export class Details implements OnInit {
     }
   }
 
+  async toggleOwned() {
+    const info = this.gameInfo();
+    if (!info?.id) return;
+
+    this.owning.set(true);
+    try {
+      const result = await this.owned.toggle({
+        id: info.id,
+        slug: info.slug,
+        title: info.title,
+        type: info.type,
+        mature: info.mature,
+        assets: info.assets,
+      });
+      if (result === 'added' && this.waitlist.isMonitored(info.id)) {
+        await this.waitlist.remove(info.id).catch(() => undefined);
+      }
+      if (result === 'removed') {
+        await this.restoreWaitlist.afterRemovedFromLibrary({
+          id: info.id,
+          slug: info.slug,
+          title: info.title,
+          type: info.type,
+          mature: info.mature,
+          assets: info.assets,
+        });
+      }
+    } catch {
+      this.messageService.add({ severity: 'error', summary: 'Erro', detail: 'Falha ao atualizar os jogos comprados' });
+    } finally {
+      this.owning.set(false);
+    }
+  }
+
   formatPrice(amount: any, currency = 'BRL') {
     if (amount === undefined || amount === null) return '-';
     try {
@@ -421,6 +645,20 @@ export class Details implements OnInit {
   formatNumber(val: number | undefined | null) {
     if (val === undefined || val === null) return '0';
     return new Intl.NumberFormat('pt-BR').format(val);
+  }
+
+  formatPlaytime(minutes: number | undefined | null): string {
+    if (!minutes || minutes < 1) return 'Tempo de jogo indisponível';
+    if (minutes < 60) return `${minutes} min de jogo`;
+    const hours = Math.round(minutes / 60);
+    return `${this.formatNumber(hours)} h de jogo`;
+  }
+
+  formatUnixDate(timestamp: number | undefined | null): string | null {
+    if (!timestamp) return null;
+    const date = new Date(timestamp * 1000);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
   formatFlag(flag: string | null | undefined) {

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { from } from 'rxjs';
 import { ITADService } from '../../services/itad';
+import { SteamService } from '../../services/steam';
 import { APP_COUNTRY } from '../shared/constants';
 
 @Injectable({
@@ -8,6 +9,7 @@ import { APP_COUNTRY } from '../shared/constants';
 })
 export class ItadApiService {
   private readonly itad = new ITADService();
+  private readonly steam = new SteamService();
 
   getShops(country = APP_COUNTRY) {
     return from(this.itad.getShops(country));
@@ -25,8 +27,20 @@ export class ItadApiService {
     return from(this.itad.getGiveaways(offset, limit, sort));
   }
 
+  getGameInfo(uuid: string) {
+    return from(this.itad.getGameInfo(uuid));
+  }
+
+  getGameDeals(uuid: string, country = APP_COUNTRY, shops?: number[]) {
+    return from(this.itad.getGameDeals(uuid, country, shops));
+  }
+
   getGameDetails(uuid: string, country = APP_COUNTRY, shops?: number[]) {
     return from(this.itad.getGameDetails(uuid, country, shops));
+  }
+
+  getGameOverview(uuid: string, country = APP_COUNTRY, shops?: number[]) {
+    return from(this.itad.getGamesOverview([uuid], country, shops));
   }
 
   getHistory(uuid: string, country = APP_COUNTRY, shops?: number[]) {
@@ -39,5 +53,13 @@ export class ItadApiService {
 
   getGameBundles(uuid: string, country = APP_COUNTRY) {
     return from(this.itad.getGameBundles(uuid, country));
+  }
+
+  getSteamReviews(appId: number, reviewType?: number) {
+    return from(this.steam.getAppReviews(appId, reviewType));
+  }
+
+  getSteamNews(appId: number) {
+    return from(this.steam.getAppNews(appId));
   }
 }

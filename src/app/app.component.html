@@ -1,9 +1,9 @@
-<div class="flex flex-col h-screen overflow-hidden" [class.deals-shell]="nav.currentTab() === 'deals'">
+<div class="flex flex-col h-screen overflow-hidden" [class.deals-shell]="nav.isDealsList()">
   <main
     class="app-content flex-1 overflow-y-auto pb-20 w-full"
-    [class.app-rail]="nav.currentTab() !== 'deals'"
-    [class.max-w-6xl]="nav.currentTab() !== 'deals'"
-    [class.mx-auto]="nav.currentTab() !== 'deals'"
+    [class.app-rail]="nav.useAppRail()"
+    [class.max-w-6xl]="nav.useAppRail()"
+    [class.mx-auto]="nav.useAppRail()"
   >
     <router-outlet></router-outlet>
     <p class="app-disclaimer">

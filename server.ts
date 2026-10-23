@@ -3,6 +3,7 @@ import path from 'path';
 import axios from 'axios';
 import { ITADService, ALLOWED_SHOP_IDS } from './src/services/itad';
 import { cache, CACHE_TTL, COLLECTIONS } from './src/services/cache';
+import { isSteamNewsFeed, normalizeSteamReviewType, steamNewsCacheKey, steamNewsQuery, steamReviewsQuery } from './src/services/steam';
 import { APP_COUNTRY } from './src/app/shared/constants';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
@@ -174,6 +175,51 @@ async function startServer() {
       res.json(results);
     } catch (e: any) {
       res.status(500).json({ error: 'ITAD Giveaways Failed' });
+    }
+  });
+
+  app.get('/api/proxy/steam/reviews', async (req, res) => {
+    const appid = Number(req.query.appid);
+    if (!appid) return res.status(400).json({ error: 'appid required' });
+    const reviewType = normalizeSteamReviewType(req.query.review_type);
+    const cacheKey = `reviews:${appid}:pt:${reviewType}:120`;
+    try {
+      const cached = await cache.get<any>(COLLECTIONS.STEAM, cacheKey);
+      if (cached) return res.json({ response: cached });
+
+      const url = `https://api.steampowered.com/IUserReviewsService/GetAppReviews/v1?${steamReviewsQuery(appid, reviewType)}`;
+      const response = await axios.get(url, { timeout: 12000 });
+      const payload = response.data?.response ?? response.data;
+      const reviews = {
+        query_summary: payload?.query_summary || null,
+        reviews: Array.isArray(payload?.reviews) ? payload.reviews : [],
+      };
+      await cache.set(COLLECTIONS.STEAM, cacheKey, reviews, CACHE_TTL.STEAM_REVIEWS);
+      res.json({ response: reviews });
+    } catch (e: any) {
+      console.error('Steam Reviews Error:', e.message);
+      res.status(500).json({ error: 'Steam reviews failed', details: e.message });
+    }
+  });
+
+  app.get('/api/proxy/steam/news', async (req, res) => {
+    const appid = Number(req.query.appid);
+    if (!appid) return res.status(400).json({ error: 'appid required' });
+    const cacheKey = steamNewsCacheKey(appid);
+    try {
+      const cached = await cache.get<any>(COLLECTIONS.STEAM, cacheKey);
+      if (cached) return res.json({ appnews: { newsitems: cached } });
+
+      const url = `https://api.steampowered.com/ISteamNews/GetNewsForApp/v2?${steamNewsQuery(appid)}`;
+      const response = await axios.get(url, { timeout: 12000 });
+      const payload = response.data?.appnews ?? response.data;
+      const items = Array.isArray(payload?.newsitems) ? payload.newsitems : [];
+      const news = items.filter((item: any) => isSteamNewsFeed(item?.feedname));
+      await cache.set(COLLECTIONS.STEAM, cacheKey, news, CACHE_TTL.STEAM_NEWS);
+      res.json({ appnews: { newsitems: news } });
+    } catch (e: any) {
+      console.error('Steam News Error:', e.message);
+      res.status(500).json({ error: 'Steam news failed', details: e.message });
     }
   });
 

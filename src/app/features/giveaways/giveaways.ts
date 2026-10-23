@@ -9,6 +9,7 @@ import { TagModule } from 'primeng/tag';
 import { MatIconModule } from '@angular/material/icon';
 import { animate, stagger } from 'motion';
 import { ImgShimmerDirective } from '../../shared/img-shimmer';
+import { OwnedGamesService } from '../../services/owned-games';
 
 interface Giveaway {
   id: number;
@@ -31,6 +32,7 @@ interface Giveaway {
 export class Giveaways implements OnInit {
   private itadApi = inject(ItadApiService);
   private el = inject(ElementRef);
+  readonly owned = inject(OwnedGamesService);
   
   giveaways = signal<Giveaway[]>([]);
   loading = signal(true);
@@ -156,5 +158,9 @@ export class Giveaways implements OnInit {
   getGameBanner(giveaway: Giveaway): string | null {
     const assets = giveaway.games?.[0]?.assets;
     return assets?.banner400 || assets?.banner300 || assets?.boxart || null;
+  }
+
+  isOwnedGiveaway(giveaway: Giveaway): boolean {
+    return (giveaway.games || []).some(game => this.owned.isOwned(game.id));
   }
 }

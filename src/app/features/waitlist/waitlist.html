@@ -8,7 +8,7 @@
           type="button"
           class="notify-trigger"
           (click)="toggleNotifications()"
-          [attr.aria-expanded]="notificationsOpen()"
+          [attr.aria-expanded]="notifications.panelOpen()"
           [attr.aria-label]="notifications.hasNotifications() ? 'Notificações da waitlist' : 'Sem notificações'"
         >
           <mat-icon>notifications</mat-icon>
@@ -16,15 +16,97 @@
             <span class="notify-badge" aria-hidden="true"></span>
           }
         </button>
-        @if (notificationsOpen()) {
-          <div class="notify-panel" role="menu">
+        @if (notifications.panelOpen()) {
+          <div class="notify-panel" role="dialog" aria-label="Notificações da waitlist">
             @if (notifications.items().length === 0) {
               <p class="notify-empty">Nenhuma notificação</p>
             } @else {
               @for (item of notifications.items(); track item.id) {
-                <div class="notify-item" [class.is-unread]="!item.read">
-                  <p class="notify-item-title">{{ item.title }}</p>
-                  <p class="notify-item-time">{{ item.timestamp | date:'dd/MM/yyyy HH:mm' }}</p>
+                @let open = notifications.expandedId() === item.id;
+                @let detail = notifications.detailsById()[item.id];
+                <div class="notify-item" [class.is-unread]="!item.read" [class.is-open]="open">
+                  <button
+                    type="button"
+                    class="notify-item-header"
+                    (click)="toggleNotificationDetail(item.id)"
+                    [attr.aria-expanded]="open"
+                    [attr.aria-controls]="'notify-detail-' + item.id"
+                  >
+                    <span class="notify-item-copy">
+                      <p class="notify-item-title">{{ translateNotificationTitle(item.title) }}</p>
+                      <p class="notify-item-time">{{ item.timestamp | date:'dd/MM/yyyy HH:mm' }}</p>
+                    </span>
+                    <mat-icon class="notify-chevron" [class.is-open]="open">expand_more</mat-icon>
+                  </button>
+                  <div
+                    class="notify-item-body"
+                    [class.is-open]="open"
+                    [id]="'notify-detail-' + item.id"
+                    role="region"
+                  >
+                    <div class="notify-item-body-inner">
+                      @if (notifications.detailsLoading()[item.id] && !detail) {
+                        <div class="notify-detail-loading">
+                          <p-skeleton width="100%" height="3.4rem" borderRadius="8px"></p-skeleton>
+                          <p-skeleton width="100%" height="3.4rem" borderRadius="8px"></p-skeleton>
+                        </div>
+                      } @else if (notifications.detailsError()[item.id]; as error) {
+                        <div class="notify-detail-error">
+                          <p>{{ error }}</p>
+                          <button type="button" (click)="retryNotificationDetail(item.id, $event)">Tentar de novo</button>
+                        </div>
+                      } @else if (detail) {
+                        @if (detail.games.length === 0) {
+                          <p class="notify-empty">Nenhum jogo nesta notificação</p>
+                        } @else {
+                          <div class="notify-games">
+                            @for (game of detail.games; track game.id) {
+                              @let deal = bestDeal(game);
+                              <a
+                                class="notify-game"
+                                [href]="notificationDealUrl(game)"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <div class="notify-game-thumb">
+                                  @if (notificationGameBanner(game.id); as image) {
+                                    <img [src]="image" [alt]="game.title" referrerpolicy="no-referrer" />
+                                  } @else {
+                                    <mat-icon>sports_esports</mat-icon>
+                                  }
+                                </div>
+                                <div class="notify-game-copy">
+                                  <p class="notify-game-title">{{ game.title }}</p>
+                                  @if (deal) {
+                                    <div class="notify-game-shop">
+                                      <app-store-logo [shopId]="deal.shop.id" [shopName]="deal.shop.name" [size]="12" />
+                                      <span>{{ deal.shop.name }}</span>
+                                      @if (deal.cut > 0) {
+                                        <span class="notify-game-cut">-{{ deal.cut }}%</span>
+                                      }
+                                    </div>
+                                    <div class="notify-game-prices">
+                                      @if (deal.cut > 0) {
+                                        <span class="notify-game-regular">{{ formatPrice(deal.regular.amount, deal.regular.currency) }}</span>
+                                      }
+                                      <span class="notify-game-current">{{ formatPrice(deal.price.amount, deal.price.currency) }}</span>
+                                    </div>
+                                  } @else {
+                                    <p class="notify-game-meta">Sem ofertas no momento</p>
+                                  }
+                                  @if (timeService.getCountdown(deal?.expiry); as countdown) {
+                                    <div class="notify-game-meta-row">
+                                      <span>{{ countdown }}</span>
+                                    </div>
+                                  }
+                                </div>
+                              </a>
+                            }
+                          </div>
+                        }
+                      }
+                    </div>
+                  </div>
                 </div>
               }
             }
@@ -88,6 +170,89 @@
       </button>
     </div>
   } @else {
+    @if (ownedLoading() || ownedRecent().length > 0 || owned.error()) {
+      <section class="owned-section">
+        <h2 class="owned-section-title">
+          <mat-icon>shopping_bag</mat-icon>
+          <span>Comprados</span>
+        </h2>
+
+        @if (owned.error(); as error) {
+          <div class="owned-error">
+            <p>{{ error }}</p>
+            @if (owned.needsReconnect()) {
+              <button type="button" class="waitlist-action" (click)="reconnectForOwned()">Reconectar</button>
+            }
+          </div>
+        } @else {
+          <swiper-container
+            class="owned-swiper"
+            slides-per-view="auto"
+            space-between="14"
+            grab-cursor="true"
+            speed="420"
+            resistance-ratio="0.65"
+            long-swipes-ratio="0.2"
+            short-swipes="true"
+          >
+            @for (game of ownedRecent(); track game.id) {
+              <swiper-slide class="owned-card-wrap">
+                <a class="owned-card" [routerLink]="['/details', game.id]" [queryParams]="{ from: 'waitlist' }">
+                  <div class="owned-thumb">
+                    <span class="owned-chip">Comprado</span>
+                    <button
+                      type="button"
+                      class="watchlist-btn owned-unmark"
+                      (click)="unmarkOwned(game, $event)"
+                      title="Remover dos comprados"
+                    >
+                      <mat-icon>remove_shopping_cart</mat-icon>
+                    </button>
+                    @if ((game.type || '').toLowerCase() === 'dlc') {
+                      <span class="dlc-strip">DLC</span>
+                    }
+                    @if (banner(game); as image) {
+                      <img [src]="image" [alt]="game.title" referrerpolicy="no-referrer" />
+                    } @else {
+                      <div class="owned-thumb-empty">
+                        <mat-icon>sports_esports</mat-icon>
+                      </div>
+                    }
+                  </div>
+                  <div class="owned-body">
+                    <h3 class="owned-title">{{ game.title }}</h3>
+                    @if (game.added) {
+                      <p class="owned-added">Adicionado em {{ game.added | date:'dd/MM/yyyy' }}</p>
+                    }
+                  </div>
+                </a>
+              </swiper-slide>
+            }
+
+            @if (ownedLoading()) {
+              @for (i of [1,2,3,4]; track i) {
+                <swiper-slide class="owned-card-wrap">
+                  <div class="owned-skeleton">
+                    <p-skeleton width="100%" height="7.6rem" borderRadius="0.9rem 0.9rem 0 0"></p-skeleton>
+                    <div class="owned-skeleton-body">
+                      <p-skeleton width="70%" height="0.9rem"></p-skeleton>
+                      <p-skeleton width="40%" height="0.55rem"></p-skeleton>
+                    </div>
+                  </div>
+                </swiper-slide>
+              }
+            }
+          </swiper-container>
+        }
+      </section>
+    }
+
+    <section class="waitlist-section">
+      <h2 class="owned-section-title waitlist-section-title">
+        <mat-icon>favorite</mat-icon>
+        <span>Waitlist</span>
+      </h2>
+
     <div class="space-y-1 px-1">
       @if (loading() && games().length === 0) {
         @for (i of [1,2,3,4,5]; track i) {
@@ -106,6 +271,10 @@
         </div>
       } @else {
         @for (game of games(); track game.id) {
+          <div
+            class="waitlist-row"
+            [class.is-leaving]="isLeaving(game.id)"
+          >
           <div 
             class="waitlist-card flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px]" 
             [routerLink]="['/details', game.id]" 
@@ -140,6 +309,15 @@
               <div class="waitlist-actions shrink-0 ml-2">
                 <button
                   type="button"
+                  (click)="markAsOwned(game, $event)"
+                  class="watchlist-btn owned-mark"
+                  [class.is-owned]="owned.isOwned(game.id)"
+                  title="Marcar como comprado"
+                >
+                  <mat-icon>{{ owned.isOwned(game.id) ? 'shopping_bag' : 'add_shopping_cart' }}</mat-icon>
+                </button>
+                <button
+                  type="button"
                   (click)="removeGame(game.id, $event)"
                   class="watchlist-btn is-saved"
                   title="Remover da waitlist"
@@ -149,8 +327,10 @@
               </div>
             </div>
           </div>
+          </div>
         }
       }
     </div>
+    </section>
   }
 </div>

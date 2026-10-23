@@ -53,6 +53,9 @@
         @for (game of results(); track game.id) {
           <div class="result-card flex items-center bg-[#16202D] hover:bg-[#213245] border-b border-black/20 active:bg-[#1b2838] transition-colors cursor-pointer min-h-[72px]" [routerLink]="['/details', game.id]" [queryParams]="{ from: 'search' }">
             <div class="game-thumb relative w-28 h-[4.5rem] shrink-0 overflow-hidden bg-black/40">
+              @if (owned.isOwned(game.id)) {
+                <span class="owned-chip list-owned">Comprado</span>
+              }
               @if (game.assets?.banner300) {
                 <img 
                   [src]="game.assets.banner300" 
