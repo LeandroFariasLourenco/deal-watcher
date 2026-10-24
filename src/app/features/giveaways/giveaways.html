@@ -1,10 +1,4 @@
 <div class="page-gutter pt-4 pb-2 space-y-4">
-  @if (!loading() && giveaways().length > 0) {
-    <div class="flex items-center justify-end">
-      <span class="text-xs text-white/40 font-mono">{{ giveaways().length }} disponíveis</span>
-    </div>
-  }
-
   <div class="space-y-1">
     @if (loading() && giveaways().length === 0) {
       @for (i of [1,2,3,4,5,6,7,8]; track i) {

@@ -8,10 +8,12 @@
   transition: all 0.2s ease-in-out;
 }
 
-.steam-card:hover {
-  border-color: #66c0f4 !important;
-  background: #2a475e !important;
-  transform: translateY(-2px);
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .steam-card:hover {
+    border-color: #66c0f4 !important;
+    background: #2a475e !important;
+    transform: translateY(-2px);
+  }
 }
 
 .line-clamp-2 {
@@ -34,10 +36,18 @@ mat-icon {
 }
 
 @media (max-width: 639px) {
+  .space-y-1 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.75rem;
+  }
+
   .giveaway-card {
     flex-direction: column;
     align-items: stretch;
     min-height: 0;
+    overflow: hidden;
+    border-bottom: 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.75rem;
   }
 
   .giveaway-card .game-thumb {

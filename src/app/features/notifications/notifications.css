@@ -1,0 +1,56 @@
+:host {
+  display: block;
+}
+
+.notify-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding-block: 0.85rem 1.25rem;
+}
+
+.notify-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.notify-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  margin-left: -0.4rem;
+  color: #66c0f4;
+  text-decoration: none;
+}
+
+.notify-back mat-icon {
+  font-size: 1.65rem;
+  width: 1.65rem;
+  height: 1.65rem;
+}
+
+.notify-head-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.notify-head-copy h1 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.notify-head-copy p {
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(199, 213, 224, 0.55);
+}

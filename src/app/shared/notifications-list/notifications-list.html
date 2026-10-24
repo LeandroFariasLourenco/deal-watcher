@@ -1,0 +1,94 @@
+<div class="notify-list" [class.is-page]="variant() === 'page'">
+  @if (notifications.items().length === 0) {
+    <p class="notify-empty">Nenhuma notificação</p>
+  } @else {
+    @for (item of notifications.items(); track item.id) {
+      @let open = notifications.expandedId() === item.id;
+      @let detail = notifications.detailsById()[item.id];
+      <div class="notify-item" [class.is-unread]="!item.read" [class.is-open]="open">
+        <button
+          type="button"
+          class="notify-item-header"
+          (click)="toggleNotificationDetail(item.id)"
+          [attr.aria-expanded]="open"
+          [attr.aria-controls]="'notify-detail-' + item.id"
+        >
+          <span class="notify-item-copy">
+            <p class="notify-item-title">{{ translateNotificationTitle(item.title) }}</p>
+            <p class="notify-item-time">{{ item.timestamp | date:'dd/MM/yyyy HH:mm' }}</p>
+          </span>
+          <mat-icon class="notify-chevron" [class.is-open]="open">expand_more</mat-icon>
+        </button>
+        <div
+          class="notify-item-body"
+          [class.is-open]="open"
+          [id]="'notify-detail-' + item.id"
+          role="region"
+        >
+          <div class="notify-item-body-inner">
+            @if (notifications.detailsLoading()[item.id] && !detail) {
+              <div class="notify-detail-loading">
+                <p-skeleton width="100%" height="3.4rem" borderRadius="8px"></p-skeleton>
+                <p-skeleton width="100%" height="3.4rem" borderRadius="8px"></p-skeleton>
+              </div>
+            } @else if (notifications.detailsError()[item.id]; as error) {
+              <div class="notify-detail-error">
+                <p>{{ error }}</p>
+                <button type="button" (click)="retryNotificationDetail(item.id, $event)">Tentar de novo</button>
+              </div>
+            } @else if (detail) {
+              @if (detail.games.length === 0) {
+                <p class="notify-empty">Nenhum jogo nesta notificação</p>
+              } @else {
+                <div class="notify-games">
+                  @for (game of detail.games; track game.id) {
+                    @let deal = bestDeal(game);
+                    <a
+                      class="notify-game"
+                      [href]="notificationDealUrl(game)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <div class="notify-game-thumb">
+                        @if (notificationGameBanner(game.id); as image) {
+                          <img [src]="image" [alt]="game.title" referrerpolicy="no-referrer" />
+                        } @else {
+                          <mat-icon>sports_esports</mat-icon>
+                        }
+                      </div>
+                      <div class="notify-game-copy">
+                        <p class="notify-game-title">{{ game.title }}</p>
+                        @if (deal) {
+                          <div class="notify-game-shop">
+                            <app-store-logo [shopId]="deal.shop.id" [shopName]="deal.shop.name" [size]="12" />
+                            <span>{{ deal.shop.name }}</span>
+                            @if (deal.cut > 0) {
+                              <span class="notify-game-cut">-{{ deal.cut }}%</span>
+                            }
+                          </div>
+                          <div class="notify-game-prices">
+                            @if (deal.cut > 0) {
+                              <span class="notify-game-regular">{{ formatPrice(deal.regular.amount, deal.regular.currency) }}</span>
+                            }
+                            <span class="notify-game-current">{{ formatPrice(deal.price.amount, deal.price.currency) }}</span>
+                          </div>
+                        } @else {
+                          <p class="notify-game-meta">Sem ofertas no momento</p>
+                        }
+                        @if (timeService.getCountdown(deal?.expiry); as countdown) {
+                          <div class="notify-game-meta-row">
+                            <span>{{ countdown }}</span>
+                          </div>
+                        }
+                      </div>
+                    </a>
+                  }
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>

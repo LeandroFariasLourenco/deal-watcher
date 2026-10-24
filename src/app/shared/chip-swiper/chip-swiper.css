@@ -90,9 +90,11 @@
   white-space: nowrap;
 }
 
-.chip-tile:hover:not(:disabled):not(.is-disabled) {
-  border-color: rgba(102, 192, 244, 0.4);
-  background: #223140;
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .chip-tile:hover:not(:disabled):not(.is-disabled) {
+    border-color: rgba(102, 192, 244, 0.4);
+    background: #223140;
+  }
 }
 
 .chip-tile:disabled,

@@ -1,0 +1,51 @@
+<section class="ai-summary" [attr.data-phase]="phase()">
+  <div class="ai-summary-inner">
+    <header class="ai-summary-head">
+      <span class="ai-summary-mark" aria-hidden="true">
+        <mat-icon>auto_awesome</mat-icon>
+      </span>
+      <div class="ai-summary-copy">
+        <h2>Resumo do vigia de ofertas</h2>
+        <p>Um panorama gerado a partir das ofertas, avaliações, assinaturas e notícias deste jogo.</p>
+      </div>
+    </header>
+
+    @switch (phase()) {
+      @case ('idle') {
+        @if (cacheChecked()) {
+          <button type="button" class="ai-summary-action" (click)="generate()">
+            <mat-icon>auto_awesome</mat-icon>
+            <span>Gerar resumo</span>
+          </button>
+        }
+      }
+      @case ('gathering') {
+        <p class="ai-summary-status">
+          <mat-icon class="ai-summary-spin">refresh</mat-icon>
+          <span>Coletando os dados da página...</span>
+        </p>
+      }
+      @case ('loading') {
+        <p class="ai-summary-status">
+          <span class="ai-summary-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>Escrevendo o resumo...</span>
+        </p>
+      }
+      @case ('error') {
+        <div class="ai-summary-error">
+          <p>{{ error() }}</p>
+          <button type="button" class="ai-summary-action is-retry" (click)="generate()">
+            <mat-icon>refresh</mat-icon>
+            <span>Tentar de novo</span>
+          </button>
+        </div>
+      }
+      @default {
+        <p class="ai-summary-text" aria-live="polite">{{ displayed() }}@if (showCaret) {
+          <span class="ai-summary-caret" aria-hidden="true"></span>
+        }</p>
+        <p class="ai-summary-note">Gerado por IA. Pode conter imprecisões.</p>
+      }
+    }
+  </div>
+</section>

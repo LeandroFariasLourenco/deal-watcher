@@ -1,0 +1,15 @@
+<div class="notify-page page-gutter">
+  <header class="notify-head">
+    <a routerLink="/waitlist" class="notify-back" aria-label="Voltar para a waitlist">
+      <mat-icon>chevron_left</mat-icon>
+    </a>
+    <div class="notify-head-copy">
+      <h1>Notificações</h1>
+      @if (notifications.items().length > 0) {
+        <p>{{ notifications.items().length }} {{ notifications.items().length === 1 ? 'alerta' : 'alertas' }}</p>
+      }
+    </div>
+  </header>
+
+  <app-notifications-list variant="page" />
+</div>

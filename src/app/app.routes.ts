@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
-import { TabPlaceholder } from './routing/tab-placeholder';
+import { Deals } from './features/deals/deals';
+
+const reuse = { reuse: true };
 
 export const routes: Routes = [
   {
@@ -9,15 +11,18 @@ export const routes: Routes = [
   },
   {
     path: 'deals',
-    component: TabPlaceholder
+    component: Deals,
+    data: reuse
   },
   {
     path: 'search',
-    component: TabPlaceholder
+    loadComponent: () => import('./features/search/search').then(m => m.Search),
+    data: reuse
   },
   {
     path: 'waitlist',
-    component: TabPlaceholder
+    loadComponent: () => import('./features/waitlist/waitlist').then(m => m.Waitlist),
+    data: reuse
   },
   {
     path: 'wishlist',
@@ -26,11 +31,17 @@ export const routes: Routes = [
   },
   {
     path: 'giveaways',
-    component: TabPlaceholder
+    loadComponent: () => import('./features/giveaways/giveaways').then(m => m.Giveaways),
+    data: reuse
   },
   {
     path: 'owned',
-    loadComponent: () => import('./features/owned/owned').then(m => m.Owned)
+    loadComponent: () => import('./features/owned/owned').then(m => m.Owned),
+    data: reuse
+  },
+  {
+    path: 'notifications',
+    loadComponent: () => import('./features/notifications/notifications').then(m => m.Notifications)
   },
   {
     path: 'details/:uuid',

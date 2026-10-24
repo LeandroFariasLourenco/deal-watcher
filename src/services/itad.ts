@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { ITADGame, ITADPriceResponse, ITADGameDetails, ITADHistoryPrice, ITADWaitlistGame, ITADIgnoredGame, ITADGameSub, ITADGameBundle, ITADNotification, ITADWaitlistNotificationDetail, ITADGamesOverview } from '../types/itad';
-import { cache, CACHE_TTL, COLLECTIONS } from './cache';
+import { cache, cacheFirst, CACHE_TTL, COLLECTIONS } from './cache';
 import { ITAD_API_BASE } from './itad-endpoints';
 import { APP_COUNTRY, findStoreConfig } from '../app/shared/constants';
 
@@ -149,25 +149,22 @@ export class ITADService {
     const targetShops = this.resolveShops(shops);
     const sortedShopsKey = [...targetShops].sort((a, b) => a - b).join(',');
     const cacheKey = `v3:${[...uuids].sort().join(',')}:${normalizedCountry}:${sortedShopsKey}`;
-    const cached = await cache.get<ITADPriceResponse>(COLLECTIONS.PRICES, cacheKey);
-    if (cached) return cached;
-
     try {
-      // Browser CORS: application/json triggers a preflight that ITAD rejects.
-      // text/plain is a simple request and the API still parses the JSON body.
-      const response = await this.client.post('/games/prices/v3', JSON.stringify(uuids), {
-        params: {
-          country: normalizedCountry,
-          shops: targetShops.join(','),
-        },
-        headers: {
-          'Content-Type': 'text/plain'
-        },
-        transformRequest: [(data) => data]
+      return await cacheFirst(COLLECTIONS.PRICES, cacheKey, CACHE_TTL.PRICES, async () => {
+        // Browser CORS: application/json triggers a preflight that ITAD rejects.
+        // text/plain is a simple request and the API still parses the JSON body.
+        const response = await this.client.post('/games/prices/v3', JSON.stringify(uuids), {
+          params: {
+            country: normalizedCountry,
+            shops: targetShops.join(','),
+          },
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          transformRequest: [(data) => data]
+        });
+        return Array.isArray(response.data) ? response.data : [];
       });
-      const data = Array.isArray(response.data) ? response.data : [];
-      await cache.set(COLLECTIONS.PRICES, cacheKey, data, CACHE_TTL.PRICES);
-      return data;
     } catch (error) {
       console.error('ITAD Prices Error:', error);
       throw error;
@@ -176,32 +173,44 @@ export class ITADService {
 
   async getGameInfo(uuid: string): Promise<any> {
     const cacheKey = `info:${uuid}`;
-    const cached = await cache.get<any>(COLLECTIONS.DETAILS, cacheKey);
-    if (cached) return cached;
-
     try {
-      const response = await this.client.get('/games/info/v2', {
-        params: { id: uuid }
+      return await cacheFirst(COLLECTIONS.DETAILS, cacheKey, CACHE_TTL.DETAILS, async () => {
+        const response = await this.client.get('/games/info/v2', {
+          params: { id: uuid }
+        });
+        return response.data;
       });
-      const info = response.data;
-      await cache.set(COLLECTIONS.DETAILS, cacheKey, info, CACHE_TTL.DETAILS);
-      return info;
     } catch (error) {
       console.error('ITAD Game Info Error:', error);
       throw error;
     }
   }
 
-  async getGameDeals(uuid: string, country = APP_COUNTRY, shops: number[] = ALLOWED_SHOP_IDS): Promise<any[]> {
+  async getGamePricePack(
+    uuid: string,
+    country = APP_COUNTRY,
+    shops: number[] = ALLOWED_SHOP_IDS
+  ): Promise<{ pack: ITADPriceResponse[number] | null; deals: any[] }> {
     const normalizedCountry = this.resolveCountry(country);
     const targetShops = this.resolveShops(shops);
     try {
       const priceResponse = await this.getPrices([uuid], normalizedCountry, targetShops);
-      return this.normalizeDeals(priceResponse, uuid, targetShops);
+      const pack = Array.isArray(priceResponse)
+        ? priceResponse.find(item => item.id === uuid) ?? priceResponse[0] ?? null
+        : null;
+      return {
+        pack,
+        deals: this.normalizeDeals(priceResponse, uuid, targetShops),
+      };
     } catch (error) {
-      console.error('ITAD Game Deals Error:', error);
+      console.error('ITAD Game Price Pack Error:', error);
       throw error;
     }
+  }
+
+  async getGameDeals(uuid: string, country = APP_COUNTRY, shops: number[] = ALLOWED_SHOP_IDS): Promise<any[]> {
+    const { deals } = await this.getGamePricePack(uuid, country, shops);
+    return deals;
   }
 
   private normalizeDeals(priceResponse: ITADPriceResponse | any[], uuid: string, targetShops: number[]): any[] {
@@ -262,42 +271,41 @@ export class ITADService {
   async getGameSubs(uuid: string, country = APP_COUNTRY): Promise<ITADGameSub[]> {
     const normalizedCountry = this.resolveCountry(country);
     const cacheKey = `subs-v2:${uuid}:${normalizedCountry}`;
-    const cached = await cache.get<ITADGameSub[]>(COLLECTIONS.SUBS, cacheKey);
-    if (cached) return cached;
-
     try {
-      const response = await this.client.post(`/games/subs/v1?country=${encodeURIComponent(normalizedCountry)}`, JSON.stringify([uuid]), {
-        params: {
-          country: normalizedCountry,
-        },
-        headers: {
-          'Content-Type': 'text/plain'
-        },
-        transformRequest: [(data) => data]
+      return await cacheFirst(COLLECTIONS.SUBS, cacheKey, CACHE_TTL.SUBS, async () => {
+        const response = await this.client.post(`/games/subs/v1?country=${encodeURIComponent(normalizedCountry)}`, JSON.stringify([uuid]), {
+          params: {
+            country: normalizedCountry,
+          },
+          headers: {
+            'Content-Type': 'text/plain'
+          },
+          transformRequest: [(data) => data]
+        });
+
+        const payload = Array.isArray(response.data) ? response.data : [];
+        const match = payload.find((item: any) => item?.id === uuid) || payload[0];
+        const rawSubs = Array.isArray(match?.subs) ? match.subs : [];
+        return rawSubs
+          .map((item: any) => {
+            const name = item?.name || item?.title || item?.shop?.name || 'Assinatura';
+            const shopFromApi = item?.shop?.id != null
+              ? { id: Number(item.shop.id), name: item.shop.name || name }
+              : null;
+            const inferred = findStoreConfig(shopFromApi?.id, shopFromApi?.name || name);
+            return {
+              id: item?.id ?? shopFromApi?.id ?? name,
+              name,
+              leaving: typeof item?.leaving === 'string' && item.leaving.trim()
+                ? item.leaving
+                : null,
+              shop: inferred
+                ? { id: inferred.id, name: inferred.displayName }
+                : shopFromApi
+            };
+          })
+          .filter((item: ITADGameSub) => !!item.name);
       });
-
-      const payload = Array.isArray(response.data) ? response.data : [];
-      const match = payload.find((item: any) => item?.id === uuid) || payload[0];
-      const rawSubs = Array.isArray(match?.subs) ? match.subs : [];
-      const subs: ITADGameSub[] = rawSubs
-        .map((item: any) => {
-          const name = item?.name || item?.title || item?.shop?.name || 'Assinatura';
-          const shopFromApi = item?.shop?.id != null
-            ? { id: Number(item.shop.id), name: item.shop.name || name }
-            : null;
-          const inferred = findStoreConfig(shopFromApi?.id, shopFromApi?.name || name);
-          return {
-            id: item?.id ?? shopFromApi?.id ?? name,
-            name,
-            shop: inferred
-              ? { id: inferred.id, name: inferred.displayName }
-              : shopFromApi
-          };
-        })
-        .filter((item: ITADGameSub) => !!item.name);
-
-      await cache.set(COLLECTIONS.SUBS, cacheKey, subs, CACHE_TTL.SUBS);
-      return subs;
     } catch (error) {
       console.error('ITAD Subs Error:', error);
       throw error;
@@ -307,33 +315,29 @@ export class ITADService {
   async getGameBundles(uuid: string, country = APP_COUNTRY): Promise<ITADGameBundle[]> {
     const normalizedCountry = this.resolveCountry(country);
     const cacheKey = `${uuid}:${normalizedCountry}:expired=false`;
-    const cached = await cache.get<ITADGameBundle[]>(COLLECTIONS.BUNDLES, cacheKey);
-    if (cached) return cached;
-
     try {
-      const response = await this.client.get('/games/bundles/v2', {
-        params: {
-          id: uuid,
-          country: normalizedCountry,
-          expired: false
-        }
+      return await cacheFirst(COLLECTIONS.BUNDLES, cacheKey, CACHE_TTL.BUNDLES, async () => {
+        const response = await this.client.get('/games/bundles/v2', {
+          params: {
+            id: uuid,
+            country: normalizedCountry,
+            expired: false
+          }
+        });
+
+        const rawList = Array.isArray(response.data) ? response.data : [];
+        return rawList
+          .map((item: any) => ({
+            id: item?.id,
+            title: item?.title || 'Bundle',
+            url: item?.url || item?.page?.url || null,
+            details: item?.details || null,
+            expiry: item?.expiry || null,
+            publish: item?.publish || null,
+            note: item?.note || null
+          }))
+          .filter((item: ITADGameBundle) => item.id != null && !!item.title);
       });
-
-      const rawList = Array.isArray(response.data) ? response.data : [];
-      const bundles: ITADGameBundle[] = rawList
-        .map((item: any) => ({
-          id: item?.id,
-          title: item?.title || 'Bundle',
-          url: item?.url || item?.page?.url || null,
-          details: item?.details || null,
-          expiry: item?.expiry || null,
-          publish: item?.publish || null,
-          note: item?.note || null
-        }))
-        .filter((item: ITADGameBundle) => item.id != null && !!item.title);
-
-      await cache.set(COLLECTIONS.BUNDLES, cacheKey, bundles, CACHE_TTL.BUNDLES);
-      return bundles;
     } catch (error) {
       console.error('ITAD Bundles Error:', error);
       throw error;
@@ -345,30 +349,26 @@ export class ITADService {
     const targetShops = this.resolveShops(shops);
     const sortedShopsKey = [...targetShops].sort((a, b) => a - b).join(',');
     const cacheKey = `${uuid}:${normalizedCountry}:${sortedShopsKey}`;
-    const cached = await cache.get<ITADHistoryPrice[]>(COLLECTIONS.HISTORY, cacheKey);
-    if (cached) return cached;
-
     try {
-      const response = await this.client.get('/games/history/v2', {
-        params: {
-          id: uuid,
-          country: normalizedCountry,
-          shops: targetShops.join(',')
-        }
+      return await cacheFirst(COLLECTIONS.HISTORY, cacheKey, CACHE_TTL.HISTORY, async () => {
+        const response = await this.client.get('/games/history/v2', {
+          params: {
+            id: uuid,
+            country: normalizedCountry,
+            shops: targetShops.join(',')
+          }
+        });
+
+        const rawHistory = Array.isArray(response.data) ? response.data : [];
+        return rawHistory
+          .filter((item: any) => item?.timestamp && item?.deal?.price)
+          .map((item: any) => ({
+            timestamp: item.timestamp,
+            price: item.deal.price.amount,
+            shop: item.shop?.name || 'Loja',
+            shopId: item.shop?.id
+          }));
       });
-
-      const rawHistory = Array.isArray(response.data) ? response.data : [];
-      const history: ITADHistoryPrice[] = rawHistory
-        .filter((item: any) => item?.timestamp && item?.deal?.price)
-        .map((item: any) => ({
-          timestamp: item.timestamp,
-          price: item.deal.price.amount,
-          shop: item.shop?.name || 'Loja',
-          shopId: item.shop?.id
-        }));
-
-      await cache.set(COLLECTIONS.HISTORY, cacheKey, history, CACHE_TTL.HISTORY);
-      return history;
     } catch (error) {
       console.error('ITAD History Error:', error);
       throw error;

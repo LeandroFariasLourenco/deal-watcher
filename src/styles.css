@@ -1,6 +1,14 @@
 @import "tailwindcss";
 @import "primeicons/primeicons.css";
 
+@custom-variant hover {
+  @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
 @font-face {
   font-family: "Motiva Sans";
   src: url("./assets/fonts/MotivaSansLight.ttf") format("truetype");
@@ -59,8 +67,8 @@ body.is-deals-tab {
   overflow-x: visible;
 }
 
-app-details,
-app-owned {
+.app-route-enter {
+  display: block;
   animation: tab-fade-in 220ms ease both;
 }
 
@@ -76,8 +84,7 @@ app-owned {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  app-details,
-  app-owned {
+  .app-route-enter {
     animation: none !important;
   }
 }
@@ -191,8 +198,10 @@ app-owned {
   overflow: hidden;
 }
 
-.load-more-link:hover:not(:disabled) {
-  color: #66c0f4;
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .load-more-link:hover:not(:disabled) {
+    color: #66c0f4;
+  }
 }
 
 .load-more-link:disabled {
@@ -290,9 +299,11 @@ app-owned {
   }
 }
 
-.watchlist-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #f87171;
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .watchlist-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f87171;
+  }
 }
 
 .watchlist-btn.is-saved {
@@ -340,8 +351,10 @@ app-owned {
   background: #3a3a3a;
   border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #4a4a4a;
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  ::-webkit-scrollbar-thumb:hover {
+    background: #4a4a4a;
+  }
 }
 
 @keyframes cascadeFadeIn {
@@ -509,8 +522,10 @@ app-owned {
   box-shadow: 0 4px 8px 0 color-mix(in srgb, #0ea5e9, transparent 96%);
 }
 
-.p-toast-message-info .p-toast-close-button:hover {
-  background: #e0f2fe;
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .p-toast-message-info .p-toast-close-button:hover {
+    background: #e0f2fe;
+  }
 }
 
 .p-toast-message-success {
@@ -520,8 +535,10 @@ app-owned {
   box-shadow: 0 4px 8px 0 color-mix(in srgb, #22c55e, transparent 96%);
 }
 
-.p-toast-message-success .p-toast-close-button:hover {
-  background: #dcfce7;
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .p-toast-message-success .p-toast-close-button:hover {
+    background: #dcfce7;
+  }
 }
 
 .p-toast-message-warn {
@@ -531,8 +548,10 @@ app-owned {
   box-shadow: 0 4px 8px 0 color-mix(in srgb, #f97316, transparent 96%);
 }
 
-.p-toast-message-warn .p-toast-close-button:hover {
-  background: #ffedd5;
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .p-toast-message-warn .p-toast-close-button:hover {
+    background: #ffedd5;
+  }
 }
 
 .p-toast-message-error {
@@ -542,8 +561,10 @@ app-owned {
   box-shadow: 0 4px 8px 0 color-mix(in srgb, #ef4444, transparent 96%);
 }
 
-.p-toast-message-error .p-toast-close-button:hover {
-  background: #fee2e2;
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .p-toast-message-error .p-toast-close-button:hover {
+    background: #fee2e2;
+  }
 }
 
 .p-toast-message-secondary {

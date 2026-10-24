@@ -17,10 +17,8 @@ export class NavigationService {
 
   currentTab = signal<MainTab>('deals');
   isDetailsPage = signal(false);
-  private currentUrl = signal(this.router.url);
   isDealsList = computed(() => this.currentTab() === 'deals' && !this.isDetailsPage());
   useAppRail = computed(() => !this.isDealsList());
-  isMainTabView = computed(() => this.tabFromUrl(this.currentUrl()) !== null);
 
   constructor() {
     this.updateContextFromUrl(this.router.url);
@@ -34,7 +32,6 @@ export class NavigationService {
 
       if (event instanceof NavigationEnd) {
         const url = event.urlAfterRedirects || event.url || '';
-        this.currentUrl.set(url);
         this.updateContextFromUrl(url);
         this.queuedTab = null;
         const to = this.viewKey(url);
@@ -96,7 +93,7 @@ export class NavigationService {
       this.currentTab.set('deals');
     } else if (cleanUrl.startsWith('/search')) {
       this.currentTab.set('search');
-    } else if (cleanUrl.startsWith('/waitlist') || cleanUrl.startsWith('/owned')) {
+    } else if (cleanUrl.startsWith('/waitlist') || cleanUrl.startsWith('/owned') || cleanUrl.startsWith('/notifications')) {
       this.currentTab.set('waitlist');
     } else if (cleanUrl.startsWith('/giveaways')) {
       this.currentTab.set('giveaways');

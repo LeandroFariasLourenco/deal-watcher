@@ -114,8 +114,10 @@
   line-clamp: 2;
 }
 
-.owned-tile:hover .owned-tile-title {
-  color: #ffffff;
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .owned-tile:hover .owned-tile-title {
+    color: #ffffff;
+  }
 }
 
 .owned-tile-skeleton {

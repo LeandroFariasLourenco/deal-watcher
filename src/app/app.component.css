@@ -12,26 +12,6 @@
   overflow-x: hidden;
 }
 
-.tab-stack,
-.details-host {
-  width: 100%;
-}
-
-.tab-page:not(.is-active),
-.tab-stack.is-parked,
-.details-host.is-parked {
-  visibility: hidden;
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  pointer-events: none;
-}
-
-.tab-page.is-active {
-  position: relative;
-}
-
 .app-disclaimer {
   max-width: 26rem;
   margin: 1.75rem auto 0;
@@ -52,14 +32,16 @@
   text-decoration: none;
 }
 
-.nav-tab:hover {
-  color: #ffffff;
-  background-color: rgba(102, 192, 244, 0.08);
-}
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .nav-tab:hover {
+    color: #ffffff;
+    background-color: rgba(102, 192, 244, 0.08);
+  }
 
-.nav-tab:hover .nav-icon {
-  transform: translateY(-1px);
-  color: #66C0F4;
+  .nav-tab:hover .nav-icon {
+    transform: translateY(-1px);
+    color: #66C0F4;
+  }
 }
 
 .nav-icon {

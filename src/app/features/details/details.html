@@ -62,14 +62,19 @@
     </div>
     } @else {
       <div class="relative min-h-[240px] w-full bg-[#0e141b] overflow-hidden flex items-end">
-        <p-skeleton width="100%" height="100%"></p-skeleton>
-        <div class="absolute inset-0 bg-gradient-to-t from-[#171A21] via-[#171A21]/80 to-transparent"></div>
+        <div class="absolute inset-0 img-shimmer-overlay"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#171A21] via-[#171A21]/75 to-transparent"></div>
         <div class="relative z-10 w-full page-gutter py-4 sm:py-6 flex items-end gap-4">
-          <p-skeleton width="5.5rem" height="7.5rem" borderRadius="8px"></p-skeleton>
-          <div class="flex-1 min-w-0 space-y-2">
-            <p-skeleton width="4.5rem" height="1rem" borderRadius="6px"></p-skeleton>
-            <p-skeleton width="70%" height="1.75rem" borderRadius="8px"></p-skeleton>
-            <p-skeleton width="40%" height="0.75rem" borderRadius="6px"></p-skeleton>
+          <div class="detail-skel-boxart">
+            <div class="img-shimmer-overlay inset-0"></div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
+              <p-skeleton width="4.5rem" height="1.125rem" borderRadius="6px"></p-skeleton>
+              <p-skeleton width="5.25rem" height="1.125rem" borderRadius="6px"></p-skeleton>
+            </div>
+            <p-skeleton styleClass="detail-skel-title" width="72%" height="1.75rem" borderRadius="8px"></p-skeleton>
+            <p-skeleton width="46%" height="0.75rem" borderRadius="6px" styleClass="mt-1"></p-skeleton>
           </div>
         </div>
       </div>
@@ -146,6 +151,13 @@
           </div>
         </section>
       }
+
+      <app-game-ai-summary
+        [gameId]="uuid()"
+        [ready]="detailsReadyForSummary()"
+        [payload]="summaryPayload()"
+        (activate)="requestAiSummary()"
+      />
 
       <section class="space-y-3">
         <h2 class="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
@@ -271,23 +283,115 @@
         }
       </section>
       } @else {
-        <p-skeleton width="100%" height="44px" borderRadius="12px"></p-skeleton>
+        <div class="detail-actions">
+          @for (i of [1, 2, 3]; track i) {
+            <p-skeleton styleClass="detail-skel-action" width="100%" height="44px" borderRadius="12px"></p-skeleton>
+          }
+        </div>
+
         <section class="space-y-2">
-          <p-skeleton width="8rem" height="0.75rem" borderRadius="6px"></p-skeleton>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
+            <mat-icon class="!text-sm !w-4 !h-4 text-[#66C0F4]">sell</mat-icon>
+            <span>Tags e Categorias</span>
+          </h2>
           <div class="flex flex-wrap gap-1.5">
             @for (i of [1,2,3,4,5,6]; track i) {
               <p-skeleton width="4.5rem" height="1.5rem" borderRadius="999px"></p-skeleton>
             }
           </div>
         </section>
-        <section class="space-y-3">
-          <p-skeleton width="7rem" height="0.75rem" borderRadius="6px"></p-skeleton>
-          <p-skeleton width="100%" height="8.5rem" borderRadius="10px"></p-skeleton>
+
+        <section class="ai-summary-skel" aria-hidden="true">
+          <div class="ai-summary-skel-inner">
+            <div class="flex items-start gap-3">
+              <p-skeleton width="2.35rem" height="2.35rem" borderRadius="0.8rem"></p-skeleton>
+              <div class="flex-1 min-w-0 space-y-2 pt-0.5">
+                <p-skeleton width="8.5rem" height="0.9rem" borderRadius="6px"></p-skeleton>
+                <p-skeleton width="100%" height="0.7rem" borderRadius="6px"></p-skeleton>
+                <p-skeleton width="78%" height="0.7rem" borderRadius="6px"></p-skeleton>
+              </div>
+            </div>
+            <p-skeleton width="100%" height="2.55rem" borderRadius="0.75rem"></p-skeleton>
+          </div>
         </section>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <p-skeleton width="100%" height="7.5rem" borderRadius="10px"></p-skeleton>
-          <p-skeleton width="100%" height="7.5rem" borderRadius="10px"></p-skeleton>
-        </div>
+
+        <section class="space-y-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
+            <mat-icon class="!text-sm !w-4 !h-4 text-[#66C0F4]">info</mat-icon>
+            <span>Ficha Técnica</span>
+          </h2>
+          <p-card styleClass="detail-meta-card">
+            <div class="spec-sheet">
+              @for (i of [1,2,3,4]; track i) {
+                <p class="spec-line">
+                  <span class="spec-label"><p-skeleton width="4.5rem" height="0.625rem" borderRadius="4px"></p-skeleton></span>
+                  <span class="spec-value"><p-skeleton width="70%" height="0.8125rem" borderRadius="4px"></p-skeleton></span>
+                </p>
+              }
+              @for (i of [1,2]; track i) {
+                <p class="spec-line spec-line-wide">
+                  <span class="spec-label"><p-skeleton width="6.5rem" height="0.625rem" borderRadius="4px"></p-skeleton></span>
+                  <span class="spec-value"><p-skeleton width="55%" height="0.8125rem" borderRadius="4px"></p-skeleton></span>
+                </p>
+              }
+            </div>
+          </p-card>
+        </section>
+
+        <section class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <p-card styleClass="detail-meta-card">
+            <div class="space-y-2.5">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-[#66C0F4] flex items-center gap-1.5">
+                <mat-icon class="!text-sm !w-4 !h-4">leaderboard</mat-icon>
+                <span>Estatísticas na Comunidade</span>
+              </h3>
+              <div class="grid grid-cols-3 gap-2 text-center">
+                @for (i of [1,2,3]; track i) {
+                  <div class="bg-black/25 rounded-lg p-2 border border-white/5 space-y-1.5 flex flex-col items-center">
+                    <p-skeleton width="2.5rem" height="0.625rem" borderRadius="4px"></p-skeleton>
+                    <p-skeleton width="2rem" height="0.875rem" borderRadius="4px"></p-skeleton>
+                  </div>
+                }
+              </div>
+            </div>
+          </p-card>
+          <p-card styleClass="detail-meta-card">
+            <div class="space-y-2.5">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-[#66C0F4] flex items-center gap-1.5">
+                <mat-icon class="!text-sm !w-4 !h-4">groups</mat-icon>
+                <span>Jogadores</span>
+              </h3>
+              <div class="grid grid-cols-4 gap-2 text-center">
+                @for (i of [1,2,3,4]; track i) {
+                  <div class="bg-black/25 rounded-lg p-2 border border-white/5 space-y-1.5 flex flex-col items-center">
+                    <p-skeleton width="2rem" height="0.625rem" borderRadius="4px"></p-skeleton>
+                    <p-skeleton width="1.75rem" height="0.875rem" borderRadius="4px"></p-skeleton>
+                  </div>
+                }
+              </div>
+            </div>
+          </p-card>
+        </section>
+
+        <section class="space-y-2.5">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
+            <mat-icon class="!text-sm !w-4 !h-4 text-[#66C0F4]">reviews</mat-icon>
+            <span>Avaliações</span>
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            @for (i of [1,2]; track i) {
+              <p-card styleClass="detail-meta-card">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex-1 min-w-0 space-y-1.5">
+                    <p-skeleton width="5rem" height="0.75rem" borderRadius="4px"></p-skeleton>
+                    <p-skeleton width="85%" height="0.7rem" borderRadius="4px"></p-skeleton>
+                  </div>
+                  <p-skeleton width="2.75rem" height="1.5rem" borderRadius="6px"></p-skeleton>
+                </div>
+              </p-card>
+            }
+          </div>
+        </section>
       }
 
       @if (gameInfo()) {

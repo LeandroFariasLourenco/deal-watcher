@@ -1,31 +1,6 @@
 import axios from 'axios';
-import { cache, CACHE_TTL, COLLECTIONS } from './cache';
+import { cacheFirst, CACHE_TTL, COLLECTIONS } from './cache';
 import { STEAM_API_BASE } from './steam-endpoints';
-
-export interface SteamWishlistItem {
-  name: string;
-  capsule: string;
-  review_score: number;
-  review_desc: string;
-  reviews_total: string;
-  reviews_percent: number;
-  release_date: string | number;
-  release_string: string;
-  platform_icons: string;
-  subs: any[];
-  type: string;
-  screenshots: string[];
-  review_css: string;
-  priority: number;
-  added: number;
-  background: string;
-  rank: number;
-  tags: string[];
-  is_free_game: boolean;
-  win: number;
-  mac: number;
-  linux: number;
-}
 
 export interface SteamReviewAuthor {
   steamid: string;
@@ -194,20 +169,16 @@ export class SteamService {
   async getAppReviews(appId: number, reviewType: SteamReviewTypeValue = SteamReviewType.All): Promise<SteamAppReviews> {
     const type = normalizeSteamReviewType(reviewType);
     const cacheKey = `reviews:${appId}:pt:${type}:120`;
-    const cached = await cache.get<SteamAppReviews>(COLLECTIONS.STEAM, cacheKey);
-    if (cached) return cached;
-
-    const url = `${STEAM_API_BASE}/IUserReviewsService/GetAppReviews/v1?${steamReviewsQuery(appId, type)}`;
-
     try {
-      const response = await axios.get(url, { timeout: 12000 });
-      const payload = response.data?.response ?? response.data;
-      const reviews: SteamAppReviews = {
-        query_summary: payload?.query_summary || null,
-        reviews: Array.isArray(payload?.reviews) ? payload.reviews : [],
-      };
-      await cache.set(COLLECTIONS.STEAM, cacheKey, reviews, CACHE_TTL.STEAM_REVIEWS);
-      return reviews;
+      return await cacheFirst(COLLECTIONS.STEAM, cacheKey, CACHE_TTL.STEAM_REVIEWS, async () => {
+        const url = `${STEAM_API_BASE}/IUserReviewsService/GetAppReviews/v1?${steamReviewsQuery(appId, type)}`;
+        const response = await axios.get(url, { timeout: 12000 });
+        const payload = response.data?.response ?? response.data;
+        return {
+          query_summary: payload?.query_summary || null,
+          reviews: Array.isArray(payload?.reviews) ? payload.reviews : [],
+        };
+      });
     } catch (error) {
       console.error('Steam Reviews Error:', error);
       throw error;
@@ -216,61 +187,27 @@ export class SteamService {
 
   async getAppNews(appId: number): Promise<SteamNewsItem[]> {
     const cacheKey = steamNewsCacheKey(appId);
-    const cached = await cache.get<any[]>(COLLECTIONS.STEAM, cacheKey);
-    if (Array.isArray(cached)) {
-      if (cached[0]?.excerpt != null || cached.length === 0) {
-        return (cached as SteamNewsItem[]).map(item => ({
-          ...item,
-          title: stripSteamMarkup(item.title) || item.title || 'Sem título',
-          excerpt: newsExcerpt(item.excerpt || ''),
-        }));
-      }
-      return mapSteamNewsItems(appId, cached);
-    }
-
-    const url = `${STEAM_API_BASE}/ISteamNews/GetNewsForApp/v2?${steamNewsQuery(appId)}`;
-
     try {
-      const response = await axios.get(url, { timeout: 12000 });
-      const payload = response.data?.appnews ?? response.data?.response ?? response.data;
-      const news = mapSteamNewsItems(appId, payload?.newsitems);
-      await cache.set(COLLECTIONS.STEAM, cacheKey, news, CACHE_TTL.STEAM_NEWS);
-      return news;
+      const cached = await cacheFirst(COLLECTIONS.STEAM, cacheKey, CACHE_TTL.STEAM_NEWS, async () => {
+        const url = `${STEAM_API_BASE}/ISteamNews/GetNewsForApp/v2?${steamNewsQuery(appId)}`;
+        const response = await axios.get(url, { timeout: 12000 });
+        const payload = response.data?.appnews ?? response.data?.response ?? response.data;
+        return mapSteamNewsItems(appId, payload?.newsitems);
+      });
+      if (Array.isArray(cached)) {
+        if (cached[0]?.excerpt != null || cached.length === 0) {
+          return (cached as SteamNewsItem[]).map(item => ({
+            ...item,
+            title: stripSteamMarkup(item.title) || item.title || 'Sem título',
+            excerpt: newsExcerpt(item.excerpt || ''),
+          }));
+        }
+        return mapSteamNewsItems(appId, cached);
+      }
+      return [];
     } catch (error) {
       console.error('Steam News Error:', error);
       throw error;
-    }
-  }
-
-  async getWishlist(steamId: string): Promise<Record<string, SteamWishlistItem>> {
-    const cacheKey = `wishlist:${steamId.toLowerCase()}`;
-    const cached = await cache.get<Record<string, SteamWishlistItem>>(COLLECTIONS.STEAM, cacheKey);
-    if (cached) return cached;
-
-    try {
-      // First attempt to treat steamId as a direct ID
-      const url = `https://store.steampowered.com/wishlist/profiles/${steamId}/wishlistdata/`;
-      const response = await axios.get(url);
-      
-      if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
-        // Might be a vanity URL or private
-        const vanityUrl = `https://store.steampowered.com/wishlist/id/${steamId}/wishlistdata/`;
-        const vanityResponse = await axios.get(vanityUrl);
-        const vanityData = vanityResponse.data;
-        if (vanityData && typeof vanityData === 'object') {
-          await cache.set(COLLECTIONS.STEAM, cacheKey, vanityData, CACHE_TTL.STEAM_WISHLIST);
-        }
-        return vanityData;
-      }
-
-      const data = response.data;
-      if (data && typeof data === 'object') {
-        await cache.set(COLLECTIONS.STEAM, cacheKey, data, CACHE_TTL.STEAM_WISHLIST);
-      }
-      return data;
-    } catch (error) {
-      console.error('Steam Wishlist Error:', error);
-      throw new Error('Could not fetch Steam wishlist. Make sure the profile and wishlist are public.');
     }
   }
 }

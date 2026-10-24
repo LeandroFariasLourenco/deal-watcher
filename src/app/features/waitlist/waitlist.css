@@ -3,10 +3,18 @@
 }
 
 @media (max-width: 639px) {
+  .waitlist-section .space-y-1 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.75rem;
+  }
+
   .waitlist-card {
     flex-direction: column;
     align-items: stretch;
     min-height: 0;
+    overflow: hidden;
+    border-bottom: 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.75rem;
   }
 
   .waitlist-card .game-thumb {
@@ -83,9 +91,11 @@
   background-color: rgba(255, 255, 255, 0.08);
 }
 
-.watchlist-btn.owned-mark:hover {
-  color: #beee11;
-  background-color: rgba(190, 238, 17, 0.16);
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .watchlist-btn.owned-mark:hover {
+    color: #beee11;
+    background-color: rgba(190, 238, 17, 0.16);
+  }
 }
 
 .watchlist-btn.owned-mark.is-owned {
@@ -133,9 +143,11 @@
   padding: 0;
 }
 
-.waitlist-action:hover,
-.notify-trigger:hover {
-  color: #ffffff;
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .waitlist-action:hover,
+  .notify-trigger:hover {
+    color: #ffffff;
+  }
 }
 
 .waitlist-action:disabled {
@@ -149,9 +161,11 @@
   border-color: rgba(248, 113, 113, 0.45);
 }
 
-.waitlist-action-logout:hover {
-  color: #ffffff;
-  background: #4a1c1c;
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .waitlist-action-logout:hover {
+    color: #ffffff;
+    background: #4a1c1c;
+  }
 }
 
 .waitlist-action mat-icon,
@@ -179,235 +193,6 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.75rem;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
-}
-
-.notify-empty,
-.notify-item-time {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.45);
-  font-size: 0.72rem;
-}
-
-.notify-empty {
-  padding: 0.85rem 0.6rem;
-  text-align: center;
-}
-
-.notify-item {
-  border-radius: 0.5rem;
-}
-
-.notify-item + .notify-item {
-  margin-top: 0.15rem;
-}
-
-.notify-item.is-unread {
-  background: rgba(102, 192, 244, 0.08);
-}
-
-.notify-item.is-open {
-  background: rgba(102, 192, 244, 0.1);
-}
-
-.notify-item-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  width: 100%;
-  padding: 0.55rem 0.6rem;
-  color: inherit;
-  background: transparent;
-  border: 0;
-  border-radius: 0.5rem;
-  text-align: left;
-  cursor: pointer;
-}
-
-.notify-item-copy {
-  min-width: 0;
-  flex: 1;
-}
-
-.notify-item-title {
-  margin: 0 0 0.2rem;
-  color: #c7d5e0;
-  font-size: 0.78rem;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-.notify-chevron {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1rem;
-  height: 1rem;
-  margin-top: 0.1rem;
-  color: rgba(199, 213, 224, 0.7);
-  font-size: 1rem;
-  line-height: 1;
-  overflow: hidden;
-  transition: transform 220ms ease;
-}
-
-.notify-chevron.is-open {
-  transform: rotate(180deg);
-}
-
-.notify-item-body {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 240ms ease;
-}
-
-.notify-item-body.is-open {
-  grid-template-rows: 1fr;
-}
-
-.notify-item-body-inner {
-  min-height: 0;
-  overflow: hidden;
-}
-
-.notify-detail-loading,
-.notify-games {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding: 0 0.4rem 0.5rem;
-}
-
-.notify-detail-error {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.4rem;
-  padding: 0 0.6rem 0.6rem;
-}
-
-.notify-detail-error p,
-.notify-game-meta {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.72rem;
-}
-
-.notify-detail-error button {
-  padding: 0.25rem 0.5rem;
-  color: #66c0f4;
-  background: rgba(102, 192, 244, 0.08);
-  border: 1px solid rgba(102, 192, 244, 0.3);
-  border-radius: 0.4rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.notify-game {
-  display: flex;
-  gap: 0.55rem;
-  min-width: 0;
-  padding: 0.4rem;
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.5rem;
-  text-decoration: none;
-}
-
-.notify-game:hover {
-  background: rgba(33, 50, 69, 0.9);
-}
-
-.notify-game-thumb {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 3.4rem;
-  height: 2.35rem;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 0.3rem;
-  color: rgba(255, 255, 255, 0.2);
-}
-
-.notify-game-thumb img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.notify-game-thumb mat-icon {
-  width: 1rem;
-  height: 1rem;
-  font-size: 1rem;
-}
-
-.notify-game-copy {
-  min-width: 0;
-  flex: 1;
-}
-
-.notify-game-title {
-  margin: 0;
-  color: #c7d5e0;
-  font-size: 0.74rem;
-  font-weight: 600;
-  line-height: 1.25;
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-}
-
-.notify-game-shop,
-.notify-game-prices,
-.notify-game-meta-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-  margin-top: 0.2rem;
-  color: #66c0f4;
-  font-size: 0.64rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.notify-game-cut {
-  color: #beee11;
-}
-
-.notify-game-prices {
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-.notify-game-regular {
-  color: rgba(255, 255, 255, 0.45);
-  font-weight: 500;
-  text-decoration: line-through;
-}
-
-.notify-game-current {
-  color: #beee11;
-  font-size: 0.78rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.notify-game-meta-row {
-  color: rgba(255, 255, 255, 0.45);
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-.notify-game-meta-row .is-low {
-  color: #66c0f4;
-  font-weight: 700;
 }
 
 .owned-section {
@@ -542,8 +327,10 @@
   color: inherit;
 }
 
-.owned-card:hover {
-  border-color: rgba(102, 192, 244, 0.28);
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .owned-card:hover {
+    border-color: rgba(102, 192, 244, 0.28);
+  }
 }
 
 .owned-thumb {

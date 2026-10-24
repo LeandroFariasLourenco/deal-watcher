@@ -17,12 +17,14 @@ import { StoreLogo } from '../../shared/store-logo/store-logo';
 import { ShopSwiper, ShopSwiperItem } from '../../shared/shop-swiper/shop-swiper';
 import { ImgShimmerDirective } from '../../shared/img-shimmer';
 import { DeferLoadDirective } from '../../shared/defer-load';
-import { ITADGameBundle, ITADGameSub } from '../../../types/itad';
+import { ITADGameBundle, ITADGamePrices, ITADGameSub } from '../../../types/itad';
 import { SteamAppReview, SteamNewsItem, SteamReviewSummary, SteamReviewType, SteamReviewTypeValue } from '../../../services/steam';
 import { WaitlistService } from '../../services/waitlist';
 import { OwnedGamesService } from '../../services/owned-games';
 import { RestoreWaitlistPrompt } from '../../shared/restore-waitlist-dialog/restore-waitlist-dialog';
 import { TimeService } from '../../services/time';
+import { GameSummaryService } from '../../services/game-summary';
+import { GameAiSummary } from './game-ai-summary';
 
 export interface HistoryShopItem {
   id: number;
@@ -48,7 +50,8 @@ export interface HistoryShopItem {
     StoreLogo,
     ShopSwiper,
     ImgShimmerDirective,
-    DeferLoadDirective
+    DeferLoadDirective,
+    GameAiSummary
   ],
   providers: [MessageService],
   templateUrl: './details.html',
@@ -59,7 +62,10 @@ export class Details implements OnInit {
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
   private messageService = inject(MessageService);
-  private revealed = new Set<string>();
+  private gameSummary = inject(GameSummaryService);
+  private readonly lazySections = ['prices', 'subs', 'bundles', 'history', 'reviews', 'news'] as const;
+  private revealed = signal(new Set<string>());
+  private settled = signal(new Set<string>());
   public waitlist = inject(WaitlistService);
   public owned = inject(OwnedGamesService);
   private restoreWaitlist = inject(RestoreWaitlistPrompt);
@@ -70,6 +76,7 @@ export class Details implements OnInit {
   history = signal<any[]>([]);
   subscriptions = signal<ITADGameSub[]>([]);
   bundles = signal<ITADGameBundle[]>([]);
+  pricePack = signal<ITADGamePrices | null>(null);
   loading = signal(true);
   loadingPrices = signal(true);
   loadingHistory = signal(true);
@@ -129,6 +136,29 @@ export class Details implements OnInit {
   });
   gameStats = computed(() => this.gameInfo()?.stats || null);
   gamePlayers = computed(() => this.gameInfo()?.players || null);
+  detailsReadyForSummary = computed(() => {
+    if (this.loading() || !this.gameInfo()) return false;
+    const revealed = this.revealed();
+    if (!this.lazySections.every(section => revealed.has(section))) return false;
+    return (
+      !this.loadingPrices() &&
+      !this.loadingSubs() &&
+      !this.loadingBundles() &&
+      !this.loadingHistory() &&
+      !this.loadingSteamNews() &&
+      !this.loadingSteamReviews()
+    );
+  });
+  summaryPayload = computed(() =>
+    this.gameSummary.buildPayload({
+      info: this.gameInfo(),
+      pricePack: this.pricePack(),
+      subscriptions: this.subscriptions(),
+      news: this.steamNews(),
+      reviewSummary: this.steamReviewSummary(),
+      reviews: this.steamReviews(),
+    })
+  );
 
   heroBanner = computed<string | null>(() => {
     const assets = this.gameInfo()?.assets;
@@ -166,6 +196,7 @@ export class Details implements OnInit {
     this.history.set([]);
     this.subscriptions.set([]);
     this.bundles.set([]);
+    this.pricePack.set(null);
     this.steamReviews.set([]);
     this.steamReviewSummary.set(null);
     this.steamReviewType.set(SteamReviewType.All);
@@ -175,7 +206,8 @@ export class Details implements OnInit {
     this.selectedHistoryShop.set(null);
     this.chartData.set(null);
     this.error.set(null);
-    this.revealed.clear();
+    this.revealed.set(new Set());
+    this.settled.set(new Set());
     this.loading.set(true);
     this.loadingPrices.set(true);
     this.loadingHistory.set(true);
@@ -187,8 +219,14 @@ export class Details implements OnInit {
 
   reveal(section: 'prices' | 'subs' | 'bundles' | 'history' | 'reviews' | 'news') {
     const uuid = this.uuid();
-    if (!uuid || this.revealed.has(section)) return;
-    this.revealed.add(section);
+    if (!uuid) return;
+    if (this.settled().has(section) || this.isSectionBusy(section)) return;
+    this.revealed.update(current => {
+      if (current.has(section)) return current;
+      const next = new Set(current);
+      next.add(section);
+      return next;
+    });
 
     switch (section) {
       case 'prices':
@@ -209,6 +247,39 @@ export class Details implements OnInit {
       case 'news':
         this.loadSteamNews();
         break;
+    }
+  }
+
+  private isSectionBusy(section: 'prices' | 'subs' | 'bundles' | 'history' | 'reviews' | 'news') {
+    if (!this.revealed().has(section)) return false;
+    switch (section) {
+      case 'prices':
+        return this.loadingPrices();
+      case 'subs':
+        return this.loadingSubs();
+      case 'bundles':
+        return this.loadingBundles();
+      case 'history':
+        return this.loadingHistory();
+      case 'reviews':
+        return this.loadingSteamReviews();
+      case 'news':
+        return this.loadingSteamNews();
+    }
+  }
+
+  private markSettled(section: string) {
+    this.settled.update(current => {
+      if (current.has(section)) return current;
+      const next = new Set(current);
+      next.add(section);
+      return next;
+    });
+  }
+
+  requestAiSummary() {
+    for (const section of this.lazySections) {
+      this.reveal(section);
     }
   }
 
@@ -315,6 +386,12 @@ export class Details implements OnInit {
           prices: this.details()?.prices || [],
           history: []
         });
+        if (this.revealed().has('news') && !this.settled().has('news') && !this.loadingSteamNews()) {
+          this.loadSteamNews();
+        }
+        if (this.revealed().has('reviews') && !this.settled().has('reviews') && !this.loadingSteamReviews()) {
+          this.loadSteamReviews();
+        }
         this.loading.set(false);
       },
       error: () => {
@@ -327,18 +404,21 @@ export class Details implements OnInit {
 
   loadPrices(uuid: string) {
     this.loadingPrices.set(true);
-    this.itadApi.getGameDeals(uuid, APP_COUNTRY, DEFAULT_SHOP_IDS).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (prices) => {
+    this.itadApi.getGamePricePack(uuid, APP_COUNTRY, DEFAULT_SHOP_IDS).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: ({ pack, deals }) => {
         if (this.uuid() !== uuid) return;
+        this.pricePack.set(pack);
         this.details.update(current => ({
           info: current?.info || null,
-          prices: Array.isArray(prices) ? prices : [],
+          prices: Array.isArray(deals) ? deals : [],
           history: current?.history || []
         }));
         this.loadingPrices.set(false);
+        this.markSettled('prices');
       },
       error: () => {
         if (this.uuid() !== uuid) return;
+        this.pricePack.set(null);
         this.details.update(current => ({
           info: current?.info || null,
           prices: current?.prices || [],
@@ -356,6 +436,7 @@ export class Details implements OnInit {
         if (this.uuid() !== uuid) return;
         this.subscriptions.set(Array.isArray(data) ? data : []);
         this.loadingSubs.set(false);
+        this.markSettled('subs');
       },
       error: () => {
         if (this.uuid() !== uuid) return;
@@ -372,6 +453,7 @@ export class Details implements OnInit {
         if (this.uuid() !== uuid) return;
         this.bundles.set(Array.isArray(data) ? data : []);
         this.loadingBundles.set(false);
+        this.markSettled('bundles');
       },
       error: () => {
         if (this.uuid() !== uuid) return;
@@ -390,6 +472,7 @@ export class Details implements OnInit {
         this.history.set(list);
         this.processHistoryShops(list);
         this.loadingHistory.set(false);
+        this.markSettled('history');
       },
       error: () => {
         if (this.uuid() !== uuid) return;
@@ -404,8 +487,10 @@ export class Details implements OnInit {
   loadSteamNews() {
     const appId = this.steamAppId();
     if (!appId) {
+      if (!this.gameInfo()) return;
       this.steamNews.set([]);
       this.loadingSteamNews.set(false);
+      this.markSettled('news');
       return;
     }
 
@@ -415,6 +500,7 @@ export class Details implements OnInit {
         if (this.steamAppId() !== appId) return;
         this.steamNews.set(Array.isArray(data) ? data : []);
         this.loadingSteamNews.set(false);
+        this.markSettled('news');
       },
       error: () => {
         if (this.steamAppId() !== appId) return;
@@ -427,7 +513,18 @@ export class Details implements OnInit {
   setSteamReviewType(type: SteamReviewTypeValue) {
     if (this.steamReviewType() === type) return;
     this.steamReviewType.set(type);
-    this.revealed.add('reviews');
+    this.settled.update(current => {
+      if (!current.has('reviews')) return current;
+      const next = new Set(current);
+      next.delete('reviews');
+      return next;
+    });
+    this.revealed.update(current => {
+      if (current.has('reviews')) return current;
+      const next = new Set(current);
+      next.add('reviews');
+      return next;
+    });
     this.loadSteamReviews();
   }
 
@@ -435,9 +532,11 @@ export class Details implements OnInit {
     const appId = this.steamAppId();
     const reviewType = this.steamReviewType();
     if (!appId) {
+      if (!this.gameInfo()) return;
       this.steamReviews.set([]);
       this.steamReviewSummary.set(null);
       this.loadingSteamReviews.set(false);
+      this.markSettled('reviews');
       return;
     }
 
@@ -449,6 +548,7 @@ export class Details implements OnInit {
         this.steamReviewSummary.set(data?.query_summary || null);
         this.steamReviews.set(Array.isArray(data?.reviews) ? data.reviews : []);
         this.loadingSteamReviews.set(false);
+        this.markSettled('reviews');
       },
       error: () => {
         if (this.steamAppId() !== appId || this.steamReviewType() !== reviewType) return;

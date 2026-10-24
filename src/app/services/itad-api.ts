@@ -42,6 +42,10 @@ export class ItadApiService {
     return from(this.itad.getGameDeals(uuid, country, shops));
   }
 
+  getGamePricePack(uuid: string, country = APP_COUNTRY, shops?: number[]) {
+    return from(this.itad.getGamePricePack(uuid, country, shops));
+  }
+
   getGameDetails(uuid: string, country = APP_COUNTRY, shops?: number[]) {
     return from(this.itad.getGameDetails(uuid, country, shops));
   }

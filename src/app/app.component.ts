@@ -1,16 +1,14 @@
-import { afterNextRender, Component, DestroyRef, effect, ElementRef, inject, signal, Type } from '@angular/core';
-import { CommonModule, NgComponentOutlet } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { afterNextRender, Component, DestroyRef, effect, ElementRef, inject, signal } from '@angular/core';
+import { RouterOutlet, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { PwaService } from './pwa';
-import { MAIN_TABS, MainTab, NavigationService } from './services/navigation';
+import { NavigationService } from './services/navigation';
 import { ItadNotificationsService } from './services/itad-notifications';
-import { Deals } from './features/deals/deals';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule, NgComponentOutlet, MatIconModule],
+  imports: [RouterOutlet, RouterLink, MatIconModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -20,7 +18,6 @@ export class AppComponent {
   nav = inject(NavigationService);
   notifications = inject(ItadNotificationsService);
   showIOSGuide = signal(false);
-  readonly tabs = MAIN_TABS;
 
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly destroyRef = inject(DestroyRef);
@@ -28,19 +25,10 @@ export class AppComponent {
   private wheelLockUntil = 0;
   private readonly wheelThreshold = 80;
   private readonly wheelStepMs = 90;
-  private readonly loadingTabs = new Set<MainTab>();
-
-  tabViews = signal<Partial<Record<MainTab, Type<unknown>>>>({
-    deals: Deals,
-  });
 
   constructor() {
     effect(() => {
       document.body.classList.toggle('is-deals-tab', this.nav.isDealsList());
-    });
-
-    effect(() => {
-      void this.ensureTab(this.nav.currentTab());
     });
 
     afterNextRender(() => {
@@ -52,29 +40,22 @@ export class AppComponent {
     });
   }
 
-  isTabActive(tab: MainTab): boolean {
-    return this.nav.currentTab() === tab;
+  onRouteActivate() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    requestAnimationFrame(() => this.replayRouteEnter());
   }
 
-  private async ensureTab(tab: MainTab) {
-    if (this.tabViews()[tab] || this.loadingTabs.has(tab)) return;
-    this.loadingTabs.add(tab);
-    const component = await this.loadTab(tab);
-    this.tabViews.update(current => ({ ...current, [tab]: component }));
-    this.loadingTabs.delete(tab);
-  }
-
-  private loadTab(tab: MainTab): Promise<Type<unknown>> {
-    switch (tab) {
-      case 'deals':
-        return Promise.resolve(Deals);
-      case 'search':
-        return import('./features/search/search').then(m => m.Search);
-      case 'waitlist':
-        return import('./features/waitlist/waitlist').then(m => m.Waitlist);
-      case 'giveaways':
-        return import('./features/giveaways/giveaways').then(m => m.Giveaways);
-    }
+  private replayRouteEnter() {
+    const main = this.host.nativeElement.querySelector('main.app-content') as HTMLElement | null;
+    if (!main) return;
+    const page = Array.from(main.children).find(el => {
+      const tag = el.tagName.toLowerCase();
+      return tag !== 'router-outlet' && !el.classList.contains('app-disclaimer');
+    }) as HTMLElement | undefined;
+    if (!page) return;
+    page.classList.remove('app-route-enter');
+    void page.offsetWidth;
+    page.classList.add('app-route-enter');
   }
 
   private readonly onTabsWheel = (event: WheelEvent) => {

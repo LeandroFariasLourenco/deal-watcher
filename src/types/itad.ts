@@ -52,6 +52,7 @@ export interface ITADPrice {
   } | null;
   url: string;
   drm: string[];
+  expiry?: string | null;
 }
 
 export interface ITADGameDetails {
@@ -106,6 +107,7 @@ export interface ITADGamesOverview {
 export interface ITADGameSub {
   id: number | string;
   name: string;
+  leaving?: string | null;
   shop?: {
     id: number;
     name: string;

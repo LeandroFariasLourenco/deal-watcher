@@ -6,7 +6,7 @@ export interface CacheEntry<T> {
 }
 
 const DB_NAME = 'itad_collection_cache_db';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 const MINUTE = 1000 * 60;
 const HOUR = MINUTE * 60;
 const DAY = HOUR * 24;
@@ -23,31 +23,30 @@ export const COLLECTIONS = {
   GIVEAWAYS: 'giveaways',
   SHOPS: 'shops',
   STEAM: 'steam',
-  GGDEALS: 'ggdeals',
   NOTIFICATION_DETAILS: 'notification_details',
-  OVERVIEW: 'game_overview'
+  OVERVIEW: 'game_overview',
+  GAME_SUMMARY: 'game_ai_summary'
 } as const;
 
 export const CACHE_TTL = {
   SEARCH: DAY,
-  DEALS: HOUR * 8,
+  DEALS: DAY,
   DEALS_STEAM_PLAYERS: DAY,
   LOOKUPS: DAY * 7,
-  PRICES: MINUTE * 15,
-  DETAILS: HOUR,
+  PRICES: DAY,
+  DETAILS: DAY,
   DETAILS_PARTIAL: MINUTE * 5,
-  HISTORY: HOUR * 6,
-  SUBS: HOUR * 12,
-  BUNDLES: HOUR * 6,
+  HISTORY: DAY,
+  SUBS: DAY * 7,
+  BUNDLES: DAY,
   GIVEAWAYS: DAY,
   SHOPS: DAY * 30,
-  STEAM_SEARCH: HOUR,
-  STEAM_WISHLIST: MINUTE * 15,
-  STEAM_REVIEWS: HOUR,
-  STEAM_NEWS: HOUR,
-  GGDEALS: MINUTE * 15,
+  STEAM_SEARCH: DAY,
+  STEAM_REVIEWS: DAY,
+  STEAM_NEWS: DAY,
   NOTIFICATION_DETAILS: HOUR,
-  OVERVIEW: MINUTE * 15
+  OVERVIEW: DAY,
+  GAME_SUMMARY: DAY * 7
 } as const;
 
 export type CollectionName = typeof COLLECTIONS[keyof typeof COLLECTIONS];
@@ -62,11 +61,16 @@ interface CacheInterface {
 
 class IndexedDBCache implements CacheInterface {
   private dbPromise: Promise<any> | null = null;
+  private readonly memory = new Map<string, CacheEntry<any>>();
 
   constructor() {
     if (typeof window !== 'undefined' && 'indexedDB' in window) {
       this.dbPromise = this.open();
     }
+  }
+
+  private memKey(collection: CollectionName, key: string) {
+    return `${collection}:${key}`;
   }
 
   private async open() {
@@ -83,6 +87,13 @@ class IndexedDBCache implements CacheInterface {
   }
 
   async get<T>(collection: CollectionName, key: string): Promise<T | null> {
+    const fullKey = this.memKey(collection, key);
+    const memorized = this.memory.get(fullKey) as CacheEntry<T> | undefined;
+    if (memorized) {
+      if (Date.now() > memorized.expiresAt) this.memory.delete(fullKey);
+      else return memorized.data;
+    }
+
     if (!this.dbPromise) return null;
     const db = await this.dbPromise;
     if (!db.objectStoreNames.contains(collection)) return null;
@@ -91,27 +102,38 @@ class IndexedDBCache implements CacheInterface {
     if (!entry) return null;
 
     if (Date.now() > entry.expiresAt) {
+      this.memory.delete(fullKey);
       await db.delete(collection, key);
       return null;
     }
 
+    this.memory.set(fullKey, entry);
     return entry.data;
   }
 
   async set<T>(collection: CollectionName, key: string, data: T, ttl = DEFAULT_TTL): Promise<void> {
-    if (!this.dbPromise) return;
-    const db = await this.dbPromise;
-    if (!db.objectStoreNames.contains(collection)) return;
     const entry: CacheEntry<T> = {
       key,
       data,
       timestamp: Date.now(),
       expiresAt: Date.now() + ttl,
     };
+    this.memory.set(this.memKey(collection, key), entry);
+    if (!this.dbPromise) return;
+    const db = await this.dbPromise;
+    if (!db.objectStoreNames.contains(collection)) return;
     await db.put(collection, entry);
   }
 
   async clear(collection?: CollectionName): Promise<void> {
+    if (collection) {
+      const prefix = `${collection}:`;
+      for (const key of this.memory.keys()) {
+        if (key.startsWith(prefix)) this.memory.delete(key);
+      }
+    } else {
+      this.memory.clear();
+    }
     if (!this.dbPromise) return;
     const db = await this.dbPromise;
     if (collection) {
@@ -170,3 +192,29 @@ class MemoryCache implements CacheInterface {
 export const cache: CacheInterface = typeof window !== 'undefined' && 'indexedDB' in window
   ? new IndexedDBCache()
   : new MemoryCache();
+
+const networkInflight = new Map<string, Promise<unknown>>();
+
+export function cacheFirst<T>(
+  collection: CollectionName,
+  key: string,
+  ttl: number,
+  loader: () => Promise<T>
+): Promise<T> {
+  const flightKey = `${collection}:${key}`;
+  const existing = networkInflight.get(flightKey);
+  if (existing) return existing as Promise<T>;
+
+  const pending = (async () => {
+    const cached = await cache.get<T>(collection, key);
+    if (cached !== null && cached !== undefined) return cached;
+    const data = await loader();
+    await cache.set(collection, key, data, ttl);
+    return data;
+  })().finally(() => {
+    networkInflight.delete(flightKey);
+  });
+
+  networkInflight.set(flightKey, pending);
+  return pending;
+}

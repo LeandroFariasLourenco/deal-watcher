@@ -33,8 +33,8 @@ export class TabRouteReuseStrategy implements RouteReuseStrategy {
     return [...this.handles.values()];
   }
 
-  shouldDestroyInjector(_route: Route): boolean {
-    return true;
+  shouldDestroyInjector(route: Route): boolean {
+    return route.data?.['reuse'] !== true;
   }
 
   shouldReuseRoute(future: ActivatedRouteSnapshot, curr: ActivatedRouteSnapshot): boolean {

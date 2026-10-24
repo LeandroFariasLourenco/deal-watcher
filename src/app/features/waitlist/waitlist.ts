@@ -1,6 +1,6 @@
-import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, inject, signal } from '@angular/core';
+import { Component, computed, CUSTOM_ELEMENTS_SCHEMA, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { register as registerSwiper } from 'swiper/element/bundle';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,17 +13,17 @@ import { ItadWebhookService } from '../../services/itad-webhook';
 import { ItadNotificationsService } from '../../services/itad-notifications';
 import { OwnedGamesService } from '../../services/owned-games';
 import { RestoreWaitlistPrompt } from '../../shared/restore-waitlist-dialog/restore-waitlist-dialog';
-import { TimeService } from '../../services/time';
 import { ImgShimmerDirective } from '../../shared/img-shimmer';
-import { StoreLogo } from '../../shared/store-logo/store-logo';
-import { ITADIgnoredGame, ITADNotificationGame } from '../../../types/itad';
+import { NotificationsList } from '../../shared/notifications-list/notifications-list';
+import { injectIsMobile } from '../../shared/layout';
+import { ITADIgnoredGame } from '../../../types/itad';
 
 registerSwiper();
 
 @Component({
   selector: 'app-waitlist',
   standalone: true,
-  imports: [CommonModule, SkeletonModule, RouterLink, MatIconModule, ToastModule, ImgShimmerDirective, StoreLogo],
+  imports: [CommonModule, SkeletonModule, RouterLink, MatIconModule, ToastModule, ImgShimmerDirective, NotificationsList],
   providers: [MessageService],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   templateUrl: './waitlist.html',
@@ -36,9 +36,10 @@ export class Waitlist {
   readonly webhook = inject(ItadWebhookService);
   readonly notifications = inject(ItadNotificationsService);
   readonly owned = inject(OwnedGamesService);
+  private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
   private readonly restoreWaitlist = inject(RestoreWaitlistPrompt);
-  readonly timeService = inject(TimeService);
+  readonly isMobile = injectIsMobile();
 
   games = this.waitlist.games;
   loading = computed(() => this.waitlist.loading() || !this.waitlist.hydrated());
@@ -46,6 +47,14 @@ export class Waitlist {
   ownedRecent = this.owned.recent;
   leavingIds = signal<Set<string>>(new Set());
   private readonly leaveDurationMs = 320;
+
+  constructor() {
+    effect(() => {
+      if (this.isMobile() && this.notifications.panelOpen()) {
+        this.notifications.closePanel();
+      }
+    });
+  }
 
   connect() {
     void this.auth.login('/waitlist');
@@ -62,17 +71,12 @@ export class Waitlist {
   }
 
   toggleNotifications() {
+    if (this.isMobile()) {
+      this.notifications.closePanel();
+      void this.router.navigate(['/notifications']);
+      return;
+    }
     this.notifications.togglePanel();
-  }
-
-  toggleNotificationDetail(id: string) {
-    this.notifications.toggleExpanded(id);
-  }
-
-  retryNotificationDetail(id: string, event: Event) {
-    event.stopPropagation();
-    event.preventDefault();
-    void this.notifications.loadDetails(id);
   }
 
   async toggleWebhook() {
@@ -241,44 +245,4 @@ export class Waitlist {
     return game.assets?.banner300 || game.assets?.banner400 || game.assets?.boxart || null;
   }
 
-  notificationGameBanner(gameId: string): string | null {
-    const game = this.games().find(item => item.id === gameId);
-    return game ? this.banner(game) : null;
-  }
-
-  bestDeal(game: ITADNotificationGame) {
-    if (!game.deals?.length) return null;
-    return [...game.deals].sort((a, b) => {
-      const priceDelta = (a.price?.amount ?? Number.POSITIVE_INFINITY) - (b.price?.amount ?? Number.POSITIVE_INFINITY);
-      if (priceDelta !== 0) return priceDelta;
-      return (b.cut ?? 0) - (a.cut ?? 0);
-    })[0];
-  }
-
-  notificationDealUrl(game: ITADNotificationGame): string {
-    const dealUrl = this.bestDeal(game)?.url?.trim();
-    if (dealUrl) return dealUrl;
-    if (game.slug) return `https://isthereanydeal.com/game/${encodeURIComponent(game.slug)}/`;
-    return 'https://isthereanydeal.com/';
-  }
-
-  translateNotificationTitle(title: string | null | undefined): string {
-    if (!title) return '';
-    const words: Record<string, string> = {
-      and: 'e',
-      more: 'mais',
-      games: 'jogos',
-      game: 'jogo',
-    };
-    return title.replace(/\b(games|game|and|more)\b/gi, match => words[match.toLowerCase()] || match);
-  }
-
-  formatPrice(amount: number | null | undefined, currency = 'BRL') {
-    if (amount === undefined || amount === null) return '-';
-    try {
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: currency || 'BRL' }).format(amount);
-    } catch {
-      return `${currency || 'BRL'} ${amount}`;
-    }
-  }
 }

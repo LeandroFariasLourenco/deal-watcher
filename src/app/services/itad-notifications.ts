@@ -47,6 +47,10 @@ export class ItadNotificationsService {
     this.panelOpen.update(open => !open);
   }
 
+  closePanel() {
+    this.panelOpen.set(false);
+  }
+
   async refresh(): Promise<void> {
     if (!this.auth.isLoggedIn()) {
       this.items.set([]);

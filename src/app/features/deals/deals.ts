@@ -30,6 +30,12 @@ import { ItadApiService } from '../../services/itad-api';
 
 type DealFeedId = 'featured' | 'rated' | 'played';
 
+interface FeedSwiper {
+  activeIndex: number;
+  size: number;
+  slidesSizesGrid?: number[];
+}
+
 interface DealFeed {
   id: DealFeedId;
   title: string;
@@ -63,7 +69,8 @@ export class Deals implements OnInit {
   selectedShops = signal<number[]>([]);
   limit = 20;
   readonly skeletonSlots = Array.from({ length: this.limit }, (_, i) => i);
-  readonly pageSkeletonSlots = [1, 2, 3];
+  readonly pageSkeletonSlots = [1, 2, 3, 4, 5, 6];
+  private readonly feedPrefetchSlides = 6;
 
   feeds: DealFeed[] = [
     this.createFeed('featured', 'Em destaques', 'auto_awesome', 'rank', true),
@@ -296,7 +303,8 @@ export class Deals implements OnInit {
         this.syncState();
         feed.loading.set(false);
         feed.loadingMore.set(false);
-        if (id === 'featured') {
+        this.refreshFeedSwiper(id);
+        if (id === 'featured' && !append) {
           this.triggerCascadeAnimation(startIndex);
         }
       },
@@ -347,11 +355,57 @@ export class Deals implements OnInit {
     return String(value);
   }
 
-  onFeedReachEnd(id: DealFeedId) {
+  onFeedProgress(id: DealFeedId, event: Event) {
+    if (!this.isNearFeedEnd(id, event)) return;
+    this.onFeedLoadMore(id);
+  }
+
+  onFeedLoadMore(id: DealFeedId) {
     const feed = this.getFeed(id);
-    if (feed.loading() || feed.loadingMore() || !feed.hasMore()) return;
+    if (feed.loading() || feed.loadingMore() || !feed.hasMore() || feed.items().length === 0) return;
     feed.offset.update(v => v + this.limit);
     this.loadFeed(id, true);
+  }
+
+  private isNearFeedEnd(id: DealFeedId, event: Event): boolean {
+    const feed = this.getFeed(id);
+    const count = feed.items().length;
+    if (count === 0) return false;
+
+    const swiper = this.swiperFromEvent(event);
+    if (swiper) {
+      const slideSize = swiper.slidesSizesGrid?.[swiper.activeIndex] || swiper.slidesSizesGrid?.[0] || 260;
+      const visible = Math.max(1, Math.ceil((swiper.size || 0) / Math.max(slideSize, 1)));
+      const lastVisible = (swiper.activeIndex ?? 0) + visible;
+      return lastVisible >= count - this.feedPrefetchSlides;
+    }
+
+    const progress = this.swiperProgress(event);
+    return progress >= 0.55;
+  }
+
+  private swiperFromEvent(event: Event): FeedSwiper | null {
+    const target = event.target as (HTMLElement & { swiper?: FeedSwiper }) | null;
+    if (target?.swiper?.slidesSizesGrid) return target.swiper;
+    const detail = (event as CustomEvent).detail;
+    if (Array.isArray(detail) && detail[0]?.slidesSizesGrid) return detail[0] as FeedSwiper;
+    return null;
+  }
+
+  private swiperProgress(event: Event): number {
+    const detail = (event as CustomEvent).detail;
+    if (Array.isArray(detail) && typeof detail[1] === 'number') return detail[1];
+    if (typeof detail === 'number') return detail;
+    return 0;
+  }
+
+  private refreshFeedSwiper(id: DealFeedId) {
+    requestAnimationFrame(() => {
+      const el = this.el.nativeElement.querySelector(
+        `swiper-container.deals-swiper[data-feed="${id}"]`
+      ) as (HTMLElement & { swiper?: { update?: () => void } }) | null;
+      el?.swiper?.update?.();
+    });
   }
 
   setBrowsePrice(max: number) {

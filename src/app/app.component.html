@@ -5,24 +5,7 @@
     [class.max-w-6xl]="nav.useAppRail()"
     [class.mx-auto]="nav.useAppRail()"
   >
-    <div class="tab-stack" [class.is-parked]="!nav.isMainTabView()">
-      @for (tab of tabs; track tab) {
-        <section
-          class="tab-page"
-          [class.is-active]="isTabActive(tab)"
-          [attr.aria-hidden]="!isTabActive(tab)"
-          [attr.inert]="isTabActive(tab) ? null : ''"
-        >
-          @if (tabViews()[tab]; as view) {
-            <ng-container [ngComponentOutlet]="view" />
-          }
-        </section>
-      }
-    </div>
-
-    <div class="details-host" [class.is-parked]="nav.isMainTabView()">
-      <router-outlet></router-outlet>
-    </div>
+    <router-outlet (activate)="onRouteActivate()"></router-outlet>
 
     <p class="app-disclaimer">
       Dados de preços e histórico fornecidos por IsThereAnyDeal. Este aplicativo é um projeto independente e não possui afiliação oficial com o IsThereAnyDeal, ou quaisquer lojas listadas. Todas as marcas registradas e artes de jogos pertencem aos seus respectivos proprietários.

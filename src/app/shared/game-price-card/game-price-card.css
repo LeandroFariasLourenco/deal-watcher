@@ -1,7 +1,6 @@
 :host {
   display: block;
   background-color: #16202d;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   transition: background-color 0.15s ease, color 0.15s ease;
   cursor: pointer;
   min-height: 72px;
@@ -21,12 +20,31 @@
   min-height: 72px;
 }
 
-:host:hover {
-  background-color: #213245;
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  :host:hover {
+    background-color: #213245;
+  }
+
+  :host:hover .deal-title {
+    color: #ffffff;
+  }
 }
 
-:host:hover .deal-title {
-  color: #ffffff;
+:host:not(.is-featured) .card-body {
+  padding-top: 0.28rem;
+  padding-bottom: 0.32rem;
+}
+
+:host:not(.is-featured) .card-copy .flex-col {
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+}
+
+:host:not(.is-featured) .card-copy .text-sm {
+  margin-top: 0.08rem;
+  line-height: 1.2;
 }
 
 @media (max-width: 639px) {
@@ -57,23 +75,19 @@
     font-size: 0.75rem;
   }
 
-  .card-body {
+  :host:not(.is-featured) .card-body {
     flex-direction: column;
     align-items: stretch;
-    gap: 0.35rem;
+    gap: 0.18rem;
     width: 100%;
-    padding: 0.4rem 0.75rem 0.5rem;
+    padding: 0.28rem 0.7rem 0.32rem;
   }
 
-  .card-copy .flex-col {
-    margin-top: 0.125rem;
-  }
-
-  .card-copy {
+  :host:not(.is-featured) .card-copy {
     padding-right: 0;
   }
 
-  .deal-title {
+  :host:not(.is-featured) .deal-title {
     display: -webkit-box;
     overflow: hidden;
     white-space: normal;
@@ -81,13 +95,41 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;
+    font-size: 0.875rem;
+    line-height: 1.2;
   }
 
-  .card-price {
+  :host:not(.is-featured) .shop-name-row {
+    font-size: 0.625rem;
+  }
+
+  :host:not(.is-featured) .card-copy .text-sm {
+    margin-top: 0.08rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+
+  :host:not(.is-featured) .deal-cut span {
+    font-size: 0.75rem;
+  }
+
+  :host:not(.is-featured) .price-amounts {
+    min-width: 0;
+  }
+
+  :host:not(.is-featured) .price-amounts .text-sm {
+    font-size: 0.6875rem;
+  }
+
+  :host:not(.is-featured) .price-amounts .text-base {
+    font-size: 0.875rem;
+  }
+
+  :host:not(.is-featured) .card-price {
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    gap: 0.75rem;
+    gap: 0.5rem;
     width: 100%;
     margin-left: 0;
   }
@@ -102,19 +144,19 @@
     min-width: 0;
   }
 
-  .watchlist-btn {
+  :host:not(.is-featured) .watchlist-btn {
     display: inline-flex;
     order: 3;
     margin-left: auto;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2rem;
+    height: 2rem;
   }
 
-  .watchlist-btn mat-icon {
-    width: 20px;
-    height: 20px;
-    font-size: 20px;
-    line-height: 20px;
+  :host:not(.is-featured) .watchlist-btn mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    line-height: 18px;
   }
 }
 
@@ -183,8 +225,10 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.28);
 }
 
-.featured-watchlist:hover {
-  background-color: rgba(10, 16, 24, 0.92);
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .featured-watchlist:hover {
+    background-color: rgba(10, 16, 24, 0.92);
+  }
 }
 
 .featured-body {
@@ -292,6 +336,8 @@
   color: #beee11;
 }
 
-:host.is-featured:hover .featured-link {
-  border-color: rgba(102, 192, 244, 0.28);
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  :host.is-featured:hover .featured-link {
+    border-color: rgba(102, 192, 244, 0.28);
+  }
 }

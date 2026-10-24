@@ -40,9 +40,11 @@
   right: 2.5rem;
 }
 
-.search-action:hover {
-  background: rgba(102, 192, 244, 0.18);
-  color: #ffffff;
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .search-action:hover {
+    background: rgba(102, 192, 244, 0.18);
+    color: #ffffff;
+  }
 }
 
 .search-idle {

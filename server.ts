@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import axios from 'axios';
 import { ITADService, ALLOWED_SHOP_IDS } from './src/services/itad';
+import { GAME_SUMMARY_SUMMARIZE_URL } from './src/services/game-summary-endpoints';
 import { cache, CACHE_TTL, COLLECTIONS } from './src/services/cache';
 import { isSteamNewsFeed, normalizeSteamReviewType, steamNewsCacheKey, steamNewsQuery, steamReviewsQuery } from './src/services/steam';
 import { APP_COUNTRY } from './src/app/shared/constants';
@@ -59,7 +60,7 @@ const saveData = (data: any) => {
 };
 
 async function startServer() {
-  app.use(express.json());
+  app.use(express.json({ limit: '2mb' }));
   const itad = new ITADService();
 
   app.get('/api/settings', (_req, res) => {
@@ -246,28 +247,40 @@ async function startServer() {
     }
   });
 
-  app.get('/api/proxy/ggdeals/prices', async (req, res) => {
-    const ids = (req.query.ids as string) || '';
-    const region = (req.query.region as string) || 'br';
-    const key = (req.query.key as string) || '9YQGBo_uCxKnRwN5oyo37uSQAQYZa7PE';
-    if (!ids.trim()) return res.status(400).json({ error: 'Steam App ID required' });
-    const cacheKey = `${ids.trim()}:${region.toLowerCase()}`;
+  app.post('/api/proxy/game-summary/summarize', async (req, res) => {
     try {
-      const cached = await cache.get<any>(COLLECTIONS.GGDEALS, cacheKey);
-      if (cached) return res.status(200).json(cached);
-
-      const url = `https://api.gg.deals/v1/prices/by-steam-app-id/?key=${encodeURIComponent(key)}&ids=${encodeURIComponent(ids)}&region=${encodeURIComponent(region)}`;
-      const response = await axios.get(url, {
-        timeout: 10000,
-        validateStatus: () => true
+      const upstream = await fetch(GAME_SUMMARY_SUMMARIZE_URL, {
+        method: 'POST',
+        headers: {
+          Accept: 'text/event-stream, application/json, text/plain;q=0.9',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(req.body ?? {}),
       });
-      if (response.status === 200) {
-        await cache.set(COLLECTIONS.GGDEALS, cacheKey, response.data, CACHE_TTL.GGDEALS);
+
+      res.status(upstream.status);
+      const contentType = upstream.headers.get('content-type');
+      if (contentType) res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'no-store');
+
+      if (!upstream.body) {
+        return res.send(await upstream.text());
       }
-      res.status(response.status).json(response.data);
-    } catch (e: any) {
-      console.error('GG.deals Error:', e.message);
-      res.status(500).json({ error: 'GG.deals request failed', details: e.message });
+
+      const reader = upstream.body.getReader();
+      res.flushHeaders();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(Buffer.from(value));
+      }
+      res.end();
+    } catch (error: any) {
+      if (res.headersSent) {
+        res.end();
+        return;
+      }
+      res.status(502).json({ error: 'Falha ao gerar o resumo.', details: error?.message });
     }
   });
 
