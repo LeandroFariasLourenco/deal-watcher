@@ -1,5 +1,6 @@
-import { Component, signal, computed, OnInit, inject, ElementRef, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, signal, computed, OnInit, inject, ElementRef, CUSTOM_ELEMENTS_SCHEMA, DestroyRef, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NavigationEnd, NavigationStart, Router } from '@angular/router';
 import { register as registerSwiper } from 'swiper/element/bundle';
 
 registerSwiper();
@@ -25,7 +26,7 @@ interface ShopItem {
 
 import { APP_COUNTRY, DEFAULT_SHOP_IDS, ALLOWED_STORE_CONFIG } from '../../shared/constants';
 
-import { DealItem, DealsStateService } from '../../services/deals-state';
+import { DealFeedState, DealItem, DealsStateService } from '../../services/deals-state';
 import { ItadApiService } from '../../services/itad-api';
 
 type DealFeedId = 'featured' | 'rated' | 'played';
@@ -34,6 +35,13 @@ interface FeedSwiper {
   activeIndex: number;
   size: number;
   slidesSizesGrid?: number[];
+  translate?: number;
+  setTransition?: (duration: number) => void;
+  setTranslate?: (translate: number) => void;
+  slideTo?: (index: number, speed?: number) => void;
+  update?: () => void;
+  updateActiveIndex?: () => void;
+  updateSlidesClasses?: () => void;
 }
 
 interface DealFeed {
@@ -47,6 +55,8 @@ interface DealFeed {
   loading: ReturnType<typeof signal<boolean>>;
   loadingMore: ReturnType<typeof signal<boolean>>;
   hasMore: ReturnType<typeof signal<boolean>>;
+  slideIndex: number;
+  slideTranslate: number;
 }
 
 @Component({
@@ -62,6 +72,10 @@ export class Deals implements OnInit {
   private itadApi = inject(ItadApiService);
   private dealsState = inject(DealsStateService);
   private el = inject(ElementRef);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+  private readonly shopSwiper = viewChild(ShopSwiper);
+  private restoringCarousels = false;
 
   allApiShops = signal<any[]>([]);
   shops = signal<ShopItem[]>([]);
@@ -89,7 +103,7 @@ export class Deals implements OnInit {
   selectedShopId = computed(() => this.selectedShops()[0] ?? null);
 
   shopSwiperItems = computed<ShopSwiperItem[]>(() =>
-    this.shops().map(shop => ({
+    this.sortShopsByDealCount(this.shops()).map(shop => ({
       id: shop.id,
       name: shop.name,
       caption: `${this.formatDealCount(shop.deals)} ofertas`,
@@ -106,12 +120,12 @@ export class Deals implements OnInit {
     { label: 'Até R$50', max: 50 },
   ];
 
-  readonly sortOptions: Array<{ id: string; label: string }> = [
-    { id: 'time', label: 'Mais novos' },
-    { id: '-time', label: 'Mais antigos' },
-    { id: 'expiry', label: 'Expirando' },
-    { id: 'price', label: 'Mais baratos' },
-    { id: '-price', label: 'Mais caros' },
+  readonly sortOptions: Array<{ id: string; label: string; icon: string }> = [
+    { id: 'rank', label: 'Mais populares', icon: 'whatshot' },
+    { id: 'time', label: 'Mais novos', icon: 'new_releases' },
+    { id: '-time', label: 'Mais antigos', icon: 'history' },
+    { id: 'price', label: 'Mais baratos', icon: 'trending_down' },
+    { id: '-price', label: 'Mais caros', icon: 'trending_up' },
   ];
 
   browseItems = signal<DealItem[]>([]);
@@ -119,8 +133,8 @@ export class Deals implements OnInit {
   browseLoading = signal(true);
   browseLoadingMore = signal(false);
   browseHasMore = signal(true);
-  browsePriceMax = signal<number | null>(null);
-  browseSort = signal<string | null>('expiry');
+  browsePriceMax = signal<number | null>(50);
+  browseSort = signal<string | null>('rank');
   private browseSeq = 0;
 
   totalDeals = computed(() =>
@@ -128,20 +142,25 @@ export class Deals implements OnInit {
   );
 
   ngOnInit() {
+    this.bindNavigationRestore();
     if (this.dealsState.isInitialized() && this.dealsState.featured().items.length > 0) {
       this.restoreFeed('featured', this.dealsState.featured());
       this.restoreFeed('rated', this.dealsState.rated());
       this.restoreFeed('played', this.dealsState.played());
       this.allApiShops.set(this.dealsState.allApiShops());
-      this.shops.set(this.dealsState.shops());
+      this.shops.set(this.sortShopsByDealCount(this.dealsState.shops()));
       this.selectedShops.set(this.normalizeSelectedShops(this.dealsState.selectedShops()));
+      this.restoreBrowse(this.dealsState.browse());
       this.loadingShops.set(false);
       for (const feed of this.feeds) {
         if (feed.items().length === 0) {
           this.loadFeed(feed.id);
         }
       }
-      this.loadBrowse();
+      if (this.browseItems().length === 0 && !this.browseLoading()) {
+        this.loadBrowse();
+      }
+      this.scheduleRestoreCarousels();
     } else {
       this.loadShops();
     }
@@ -180,6 +199,8 @@ export class Deals implements OnInit {
       loading: signal(true),
       loadingMore: signal(false),
       hasMore: signal(true),
+      slideIndex: 0,
+      slideTranslate: 0,
     };
   }
 
@@ -187,22 +208,57 @@ export class Deals implements OnInit {
     return this.feeds.find(feed => feed.id === id)!;
   }
 
-  private restoreFeed(id: DealFeedId, state: { items: DealItem[]; offset: number }) {
+  private restoreFeed(id: DealFeedId, state: DealFeedState) {
     const feed = this.getFeed(id);
     feed.items.set(state.items);
     feed.offset.set(state.offset);
     feed.loading.set(false);
     feed.hasMore.set(state.items.length > 0);
+    feed.slideIndex = state.slideIndex ?? 0;
+    feed.slideTranslate = state.slideTranslate ?? 0;
+  }
+
+  private restoreBrowse(state: { items: DealItem[]; offset: number; hasMore: boolean; priceMax: number | null; sort: string | null }) {
+    const sort = state.sort === 'expiry' ? 'rank' : state.sort;
+    this.browsePriceMax.set(state.priceMax);
+    this.browseSort.set(sort);
+    if (state.sort === 'expiry') {
+      this.loadBrowse();
+      return;
+    }
+    this.browseItems.set(state.items);
+    this.browseOffset.set(state.offset);
+    this.browseHasMore.set(state.hasMore);
+    this.browseLoading.set(false);
+    this.browseLoadingMore.set(false);
+  }
+
+  private feedSnapshot(id: DealFeedId): DealFeedState {
+    const feed = this.getFeed(id);
+    return {
+      items: feed.items(),
+      offset: feed.offset(),
+      slideIndex: feed.slideIndex,
+      slideTranslate: feed.slideTranslate,
+    };
   }
 
   private syncState() {
     this.dealsState.saveState(
-      { items: this.getFeed('featured').items(), offset: this.getFeed('featured').offset() },
-      { items: this.getFeed('rated').items(), offset: this.getFeed('rated').offset() },
-      { items: this.getFeed('played').items(), offset: this.getFeed('played').offset() },
+      this.feedSnapshot('featured'),
+      this.feedSnapshot('rated'),
+      this.feedSnapshot('played'),
       this.allApiShops(),
       this.shops(),
-      this.selectedShops()
+      this.selectedShops(),
+      {
+        items: this.browseItems(),
+        offset: this.browseOffset(),
+        hasMore: this.browseHasMore(),
+        priceMax: this.browsePriceMax(),
+        sort: this.browseSort(),
+      },
+      this.shopSwiper()?.capturePosition() ?? this.dealsState.shopTranslate()
     );
   }
 
@@ -233,7 +289,7 @@ export class Deals implements OnInit {
           }
         }
 
-        this.shops.set(filteredShops);
+        this.shops.set(this.sortShopsByDealCount(filteredShops));
         this.loadingShops.set(false);
         this.loadAllFeeds();
       },
@@ -251,6 +307,8 @@ export class Deals implements OnInit {
       feed.hasMore.set(true);
       feed.loadingMore.set(false);
       feed.loading.set(true);
+      feed.slideIndex = 0;
+      feed.slideTranslate = 0;
     }
     for (const feed of this.feeds) {
       this.loadFeed(feed.id);
@@ -347,6 +405,14 @@ export class Deals implements OnInit {
     return [shopIds[0]];
   }
 
+  private sortShopsByDealCount(shops: ShopItem[]): ShopItem[] {
+    return [...shops].sort((left, right) => {
+      const dealDiff = (Number(right.deals) || 0) - (Number(left.deals) || 0);
+      if (dealDiff !== 0) return dealDiff;
+      return left.name.localeCompare(right.name, 'pt-BR');
+    });
+  }
+
   formatDealCount(count: number): string {
     const value = Number(count) || 0;
     if (value >= 1000) {
@@ -356,8 +422,18 @@ export class Deals implements OnInit {
   }
 
   onFeedProgress(id: DealFeedId, event: Event) {
+    this.captureFeedPosition(id, event);
     if (!this.isNearFeedEnd(id, event)) return;
     this.onFeedLoadMore(id);
+  }
+
+  onFeedSwiperInit(id: DealFeedId) {
+    this.restoreFeedCarousel(id);
+  }
+
+  onFeedSlidesUpdated(id: DealFeedId, event: Event) {
+    this.restoreFeedCarousel(id);
+    this.onFeedProgress(id, event);
   }
 
   onFeedLoadMore(id: DealFeedId) {
@@ -401,11 +477,94 @@ export class Deals implements OnInit {
 
   private refreshFeedSwiper(id: DealFeedId) {
     requestAnimationFrame(() => {
-      const el = this.el.nativeElement.querySelector(
-        `swiper-container.deals-swiper[data-feed="${id}"]`
-      ) as (HTMLElement & { swiper?: { update?: () => void } }) | null;
-      el?.swiper?.update?.();
+      const swiper = this.feedSwiper(id);
+      swiper?.update?.();
+      this.restoreFeedCarousel(id);
     });
+  }
+
+  private bindNavigationRestore() {
+    const sub = this.router.events.subscribe(event => {
+      if (event instanceof NavigationStart && this.isDealsUrl(this.router.url)) {
+        this.captureCarousels();
+        this.syncState();
+      }
+      if (event instanceof NavigationEnd && this.isDealsUrl(event.urlAfterRedirects || event.url)) {
+        this.scheduleRestoreCarousels();
+      }
+    });
+    this.destroyRef.onDestroy(() => sub.unsubscribe());
+  }
+
+  private isDealsUrl(url: string): boolean {
+    const path = url.split('?')[0].split('#')[0];
+    return path === '/deals' || path.endsWith('/deals');
+  }
+
+  private scheduleRestoreCarousels() {
+    this.restoringCarousels = true;
+    const apply = () => {
+      this.restoreCarousels();
+      requestAnimationFrame(() => {
+        this.restoreCarousels();
+        this.restoringCarousels = false;
+      });
+    };
+    requestAnimationFrame(apply);
+  }
+
+  private captureCarousels() {
+    for (const feed of this.feeds) {
+      this.captureFeedPosition(feed.id);
+    }
+    this.shopSwiper()?.capturePosition();
+  }
+
+  private restoreCarousels() {
+    for (const feed of this.feeds) {
+      this.restoreFeedCarousel(feed.id);
+    }
+    this.shopSwiper()?.restorePosition(this.dealsState.shopTranslate());
+  }
+
+  private captureFeedPosition(id: DealFeedId, event?: Event) {
+    if (this.restoringCarousels) return;
+    const host = this.el.nativeElement as HTMLElement;
+    if (host.isConnected === false) return;
+    const swiper = event ? this.swiperFromEvent(event) : this.feedSwiper(id);
+    if (!swiper) return;
+    const feed = this.getFeed(id);
+    if (typeof swiper.activeIndex === 'number') feed.slideIndex = swiper.activeIndex;
+    if (typeof swiper.translate === 'number' && !Number.isNaN(swiper.translate)) {
+      feed.slideTranslate = swiper.translate;
+    }
+  }
+
+  private restoreFeedCarousel(id: DealFeedId) {
+    const feed = this.getFeed(id);
+    const swiper = this.feedSwiper(id);
+    if (!swiper || feed.items().length === 0) return;
+    this.restoringCarousels = true;
+    swiper.setTransition?.(0);
+    if (typeof feed.slideTranslate === 'number') {
+      swiper.setTranslate?.(feed.slideTranslate);
+    }
+    if (feed.slideIndex > 0) {
+      swiper.slideTo?.(feed.slideIndex, 0);
+      swiper.setTranslate?.(feed.slideTranslate);
+    }
+    swiper.updateActiveIndex?.();
+    swiper.updateSlidesClasses?.();
+    requestAnimationFrame(() => {
+      this.restoringCarousels = false;
+    });
+  }
+
+  private feedSwiper(id: DealFeedId): FeedSwiper | null {
+    const el = this.el.nativeElement.querySelector(
+      `swiper-container.deals-swiper[data-feed="${id}"]`
+    ) as (HTMLElement & { swiper?: FeedSwiper }) | null;
+    return el?.swiper ?? null;
   }
 
   setBrowsePrice(max: number) {
@@ -462,6 +621,7 @@ export class Deals implements OnInit {
         this.browseHasMore.set(newDeals.length >= this.limit);
         this.browseLoading.set(false);
         this.browseLoadingMore.set(false);
+        this.syncState();
       },
       error: () => {
         if (seq !== this.browseSeq) return;

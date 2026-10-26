@@ -1,4 +1,4 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output, viewChild } from '@angular/core';
 import { ChipSwiper, ChipTile } from '../chip-swiper/chip-swiper';
 
 export interface ShopSwiperItem {
@@ -26,6 +26,8 @@ export class ShopSwiper {
   busy = input(false);
 
   select = output<number | null>();
+
+  private readonly chips = viewChild(ChipSwiper);
 
   tiles = computed<ChipTile[]>(() => {
     const selected = this.selectedId();
@@ -61,5 +63,13 @@ export class ShopSwiper {
 
   onSelect(item: ChipTile) {
     this.select.emit(item.id === 'all' ? null : Number(item.id));
+  }
+
+  capturePosition(): number {
+    return this.chips()?.capturePosition() ?? 0;
+  }
+
+  restorePosition(translate: number) {
+    this.chips()?.restorePosition(translate);
   }
 }

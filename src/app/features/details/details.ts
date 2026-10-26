@@ -779,18 +779,7 @@ export class Details implements OnInit {
     return names.length > 0 ? names.join(', ') : 'Não informado';
   }
 
-  formatSpecFeatures(info: {
-    achievements?: boolean;
-    tradingCards?: boolean;
-    earlyAccess?: boolean;
-    mature?: boolean;
-  } | null | undefined): string {
-    const parts = [
-      `Conquistas: ${info?.achievements ? 'sim' : 'não'}`,
-      `Cartas: ${info?.tradingCards ? 'sim' : 'não'}`,
-      `Acesso antecipado: ${info?.earlyAccess ? 'sim' : 'não'}`,
-      `Adulto: ${info?.mature ? 'sim' : 'não'}`,
-    ];
-    return parts.join(' · ');
+  formatYesNo(value: boolean | null | undefined): string {
+    return value ? 'Sim' : 'Não';
   }
 }

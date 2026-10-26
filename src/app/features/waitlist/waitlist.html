@@ -45,15 +45,6 @@
       }
       <button
         type="button"
-        (click)="sendEmails()"
-        [disabled]="email.sending()"
-        class="waitlist-action"
-      >
-        <mat-icon>mail</mat-icon>
-        {{ email.sending() ? 'Enviando…' : 'Disparar e-mails' }}
-      </button>
-      <button
-        type="button"
         (click)="logout()"
         class="waitlist-action waitlist-action-logout"
       >

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { SteamAppReview, SteamNewsItem, SteamReviewSummary } from '../../services/steam';
 import { cache, CACHE_TTL, COLLECTIONS } from '../../services/cache';
-import { resolveGameSummaryUrl } from '../../services/game-summary-endpoints';
+import { GAME_SUMMARY_SUMMARIZE_URL } from '../../services/game-summary-endpoints';
 import { ITADGamePrices, ITADGameSub, ITADMoney } from '../../types/itad';
 import {
   GameSummaryPayload,
@@ -111,7 +111,7 @@ export class GameSummaryService {
     onUpdate: (text: string) => void,
     signal: AbortSignal
   ): Promise<string> {
-    const response = await fetch(resolveGameSummaryUrl(), {
+    const response = await fetch(GAME_SUMMARY_SUMMARIZE_URL, {
       method: 'POST',
       headers: {
         Accept: 'text/event-stream, application/json, text/plain;q=0.9',

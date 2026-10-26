@@ -13,6 +13,9 @@
   prevent-clicks="false"
   prevent-clicks-propagation="false"
   [attr.free-mode]="freeMode() ? 'true' : null"
+  (swiperinit)="onSwiperInit()"
+  (swiperprogress)="onSwiperProgress()"
+  (swiperslidesupdated)="onSwiperSlidesUpdated()"
 >
   @if (loading()) {
     @for (i of skeletons(); track i) {

@@ -1,9 +1,9 @@
 <p-toast position="bottom-center"></p-toast>
 <div class="deals-page">
-  <section class="featured-section shops-section">
-    <h2 class="deals-section-title deals-centered">
+  <section class="featured-section shops-section deals-centered">
+    <h2 class="deals-section-title">
       <mat-icon>storefront</mat-icon>
-      <span>Lojas Oficiais</span>
+      <span>Lojas</span>
     </h2>
 
     <app-shop-swiper
@@ -41,9 +41,10 @@
         resistance-ratio="0.65"
         long-swipes-ratio="0.2"
         short-swipes="true"
+        (swiperinit)="onFeedSwiperInit(feed.id)"
         (swiperprogress)="onFeedProgress(feed.id, $event)"
         (swiperslidechange)="onFeedProgress(feed.id, $event)"
-        (swiperslidesupdated)="onFeedProgress(feed.id, $event)"
+        (swiperslidesupdated)="onFeedSlidesUpdated(feed.id, $event)"
         (swiperreachend)="onFeedLoadMore(feed.id)"
       >
         @for (deal of feed.items(); track deal.id; let i = $index) {
@@ -118,7 +119,8 @@
             [class.is-active]="browseSort() === option.id"
             (click)="setBrowseSort(option.id)"
           >
-            {{ option.label }}
+            <mat-icon>{{ option.icon }}</mat-icon>
+            <span>{{ option.label }}</span>
           </button>
         }
       </div>

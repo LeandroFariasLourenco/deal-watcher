@@ -10,6 +10,10 @@ export class ImgShimmerDirective {
   private hostClassAdded = false;
   private resizeObserver: ResizeObserver | null = null;
   private mutationObserver: MutationObserver | null = null;
+  private heldAlt: string | null = null;
+  private holdingAlt = false;
+  private heldTitle: string | null = null;
+  private holdingTitle = false;
 
   constructor() {
     this.start();
@@ -61,8 +65,37 @@ export class ImgShimmerDirective {
       this.resizeObserver.observe(parent);
     }
 
+    this.suppressImageText();
     this.img.classList.add('img-shimmer');
     this.syncOverlayBox();
+  }
+
+  private suppressImageText() {
+    if (!this.holdingAlt) {
+      this.heldAlt = this.img.getAttribute('alt');
+      this.holdingAlt = true;
+      this.img.setAttribute('alt', '');
+    }
+    if (!this.holdingTitle) {
+      this.heldTitle = this.img.getAttribute('title');
+      this.holdingTitle = true;
+      this.img.removeAttribute('title');
+    }
+  }
+
+  private restoreImageText() {
+    if (this.holdingAlt) {
+      if (this.heldAlt == null) this.img.removeAttribute('alt');
+      else this.img.setAttribute('alt', this.heldAlt);
+      this.holdingAlt = false;
+      this.heldAlt = null;
+    }
+    if (this.holdingTitle) {
+      if (this.heldTitle == null) this.img.removeAttribute('title');
+      else this.img.setAttribute('title', this.heldTitle);
+      this.holdingTitle = false;
+      this.heldTitle = null;
+    }
   }
 
   private syncOverlayBox() {
@@ -85,6 +118,7 @@ export class ImgShimmerDirective {
   }
 
   private hide() {
+    this.restoreImageText();
     this.img.classList.remove('img-shimmer');
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;

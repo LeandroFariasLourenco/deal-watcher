@@ -7,22 +7,10 @@ declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: unknown;
 };
 
-const EMAIL_API_URL = 'https://deal-watcher-email.feleolive2010.workers.dev';
-
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 self.skipWaiting();
 clientsClaim();
-
-async function triggerDealsEmail() {
-  try {
-    await fetch(EMAIL_API_URL, {
-      headers: { Accept: 'application/json' },
-    });
-  } catch (err) {
-    console.error('[SW] Erro ao disparar e-mail:', err);
-  }
-}
 
 async function checkWebhookEventsInBackground() {
   try {
@@ -41,8 +29,6 @@ async function checkWebhookEventsInBackground() {
         tag: 'itad-webhook-alert',
         data: { latestDeal, url: 'waitlist' },
       });
-
-      await triggerDealsEmail();
     } else if ('clearAppBadge' in navigator) {
       await navigator.clearAppBadge();
     }

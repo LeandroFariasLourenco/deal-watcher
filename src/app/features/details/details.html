@@ -159,40 +159,50 @@
         (activate)="requestAiSummary()"
       />
 
-      <section class="space-y-3">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
-          <mat-icon class="!text-sm !w-4 !h-4 text-[#66C0F4]">info</mat-icon>
+      <section class="spec-section">
+        <h2 class="spec-heading">
+          <mat-icon>info</mat-icon>
           <span>Ficha Técnica</span>
         </h2>
 
-        <p-card styleClass="detail-meta-card">
-          <div class="spec-sheet">
-            <p class="spec-line">
-              <span class="spec-label">Lançamento</span>
-              <span class="spec-value tabular-nums">{{ formatDate(info.releaseDate) }}</span>
-            </p>
-            <p class="spec-line">
-              <span class="spec-label">Tipo</span>
-              <span class="spec-value">{{ formatGameType(info.type) }}</span>
-            </p>
-            <p class="spec-line">
-              <span class="spec-label">Steam AppID</span>
-              <span class="spec-value spec-appid tabular-nums">{{ info.appid || 'N/A' }}</span>
-            </p>
-            <p class="spec-line">
-              <span class="spec-label">Recursos</span>
-              <span class="spec-value spec-features">{{ formatSpecFeatures(info) }}</span>
-            </p>
-            <p class="spec-line spec-line-wide">
-              <span class="spec-label">Desenvolvedores</span>
-              <span class="spec-value">{{ formatCompanyNames(gameDevelopers()) }}</span>
-            </p>
-            <p class="spec-line spec-line-wide">
-              <span class="spec-label">Publicadoras</span>
-              <span class="spec-value">{{ formatCompanyNames(gamePublishers()) }}</span>
-            </p>
-          </div>
-        </p-card>
+        <div class="spec-sheet">
+          <p class="spec-line">
+            <span class="spec-label">Lançamento</span>
+            <span class="spec-value tabular-nums">{{ formatDate(info.releaseDate) }}</span>
+          </p>
+          <p class="spec-line">
+            <span class="spec-label">Tipo</span>
+            <span class="spec-value">{{ formatGameType(info.type) }}</span>
+          </p>
+          <p class="spec-line">
+            <span class="spec-label">Steam AppID</span>
+            <span class="spec-value spec-appid tabular-nums">{{ info.appid || 'N/A' }}</span>
+          </p>
+          <p class="spec-line">
+            <span class="spec-label">Conquistas</span>
+            <span class="spec-value">{{ formatYesNo(info.achievements) }}</span>
+          </p>
+          <p class="spec-line">
+            <span class="spec-label">Cartas colecionáveis</span>
+            <span class="spec-value">{{ formatYesNo(info.tradingCards) }}</span>
+          </p>
+          <p class="spec-line">
+            <span class="spec-label">Acesso antecipado</span>
+            <span class="spec-value">{{ formatYesNo(info.earlyAccess) }}</span>
+          </p>
+          <p class="spec-line">
+            <span class="spec-label">Conteúdo adulto</span>
+            <span class="spec-value">{{ formatYesNo(info.mature) }}</span>
+          </p>
+          <p class="spec-line">
+            <span class="spec-label">Desenvolvedores</span>
+            <span class="spec-value">{{ formatCompanyNames(gameDevelopers()) }}</span>
+          </p>
+          <p class="spec-line">
+            <span class="spec-label">Publicadoras</span>
+            <span class="spec-value">{{ formatCompanyNames(gamePublishers()) }}</span>
+          </p>
+        </div>
       </section>
 
       @if (gameStats() || gamePlayers()) {
@@ -315,27 +325,19 @@
           </div>
         </section>
 
-        <section class="space-y-3">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-white/50 flex items-center gap-1.5">
-            <mat-icon class="!text-sm !w-4 !h-4 text-[#66C0F4]">info</mat-icon>
+        <section class="spec-section">
+          <h2 class="spec-heading">
+            <mat-icon>info</mat-icon>
             <span>Ficha Técnica</span>
           </h2>
-          <p-card styleClass="detail-meta-card">
-            <div class="spec-sheet">
-              @for (i of [1,2,3,4]; track i) {
-                <p class="spec-line">
-                  <span class="spec-label"><p-skeleton width="4.5rem" height="0.625rem" borderRadius="4px"></p-skeleton></span>
-                  <span class="spec-value"><p-skeleton width="70%" height="0.8125rem" borderRadius="4px"></p-skeleton></span>
-                </p>
-              }
-              @for (i of [1,2]; track i) {
-                <p class="spec-line spec-line-wide">
-                  <span class="spec-label"><p-skeleton width="6.5rem" height="0.625rem" borderRadius="4px"></p-skeleton></span>
-                  <span class="spec-value"><p-skeleton width="55%" height="0.8125rem" borderRadius="4px"></p-skeleton></span>
-                </p>
-              }
-            </div>
-          </p-card>
+          <div class="spec-sheet">
+            @for (i of [1,2,3,4,5,6,7,8,9]; track i) {
+              <p class="spec-line spec-line-skel">
+                <p-skeleton width="5.5rem" height="0.625rem" borderRadius="3px"></p-skeleton>
+                <p-skeleton width="7.5rem" height="0.625rem" borderRadius="3px"></p-skeleton>
+              </p>
+            }
+          </div>
         </section>
 
         <section class="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -22,6 +22,7 @@ interface ChipSwiperInstance {
   size: number;
   slidesGrid: number[];
   slidesSizesGrid: number[];
+  translate?: number;
   minTranslate: () => number;
   maxTranslate: () => number;
   setTransition: (duration: number) => void;
@@ -49,9 +50,39 @@ export class ChipSwiper {
 
   private swiperRef = viewChild<ElementRef<HTMLElement>>('chipSwiper');
   private lastSelectAt = 0;
+  private savedTranslate = 0;
+  private restoring = false;
 
   skeletons(): number[] {
     return Array.from({ length: Math.max(1, this.skeletonCount()) }, (_, i) => i);
+  }
+
+  capturePosition(): number {
+    const translate = this.swiper()?.translate;
+    if (typeof translate === 'number' && !Number.isNaN(translate)) {
+      this.savedTranslate = translate;
+    }
+    return this.savedTranslate;
+  }
+
+  restorePosition(translate = this.savedTranslate) {
+    this.savedTranslate = translate;
+    this.applySavedPosition();
+  }
+
+  onSwiperInit() {
+    this.applySavedPosition();
+  }
+
+  onSwiperProgress() {
+    if (this.restoring) return;
+    const el = this.swiperRef()?.nativeElement;
+    if (el && !el.isConnected) return;
+    this.capturePosition();
+  }
+
+  onSwiperSlidesUpdated() {
+    this.applySavedPosition();
   }
 
   onSelect(item: ChipTile, event?: Event) {
@@ -67,8 +98,25 @@ export class ChipSwiper {
     this.select.emit(item);
   }
 
+  private swiper(): ChipSwiperInstance | undefined {
+    return (this.swiperRef()?.nativeElement as HTMLElement & { swiper?: ChipSwiperInstance } | undefined)?.swiper;
+  }
+
+  private applySavedPosition() {
+    const swiper = this.swiper();
+    if (!swiper) return;
+    this.restoring = true;
+    swiper.setTransition(0);
+    swiper.setTranslate(this.savedTranslate);
+    swiper.updateActiveIndex();
+    swiper.updateSlidesClasses();
+    requestAnimationFrame(() => {
+      this.restoring = false;
+    });
+  }
+
   private centerSlide(index: number) {
-    const swiper = (this.swiperRef()?.nativeElement as HTMLElement & { swiper?: ChipSwiperInstance } | undefined)?.swiper;
+    const swiper = this.swiper();
     if (!swiper) return;
 
     const offset = swiper.slidesGrid[index];
@@ -84,5 +132,6 @@ export class ChipSwiper {
     swiper.setTranslate(translate);
     swiper.updateActiveIndex();
     swiper.updateSlidesClasses();
+    this.savedTranslate = translate;
   }
 }

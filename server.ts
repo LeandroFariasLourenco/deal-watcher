@@ -2,7 +2,6 @@ import express from 'express';
 import path from 'path';
 import axios from 'axios';
 import { ITADService, ALLOWED_SHOP_IDS } from './src/services/itad';
-import { GAME_SUMMARY_SUMMARIZE_URL } from './src/services/game-summary-endpoints';
 import { cache, CACHE_TTL, COLLECTIONS } from './src/services/cache';
 import { isSteamNewsFeed, normalizeSteamReviewType, steamNewsCacheKey, steamNewsQuery, steamReviewsQuery } from './src/services/steam';
 import { APP_COUNTRY } from './src/app/shared/constants';
@@ -244,43 +243,6 @@ async function startServer() {
     } catch (e: any) {
       console.error('Steam Storesearch Error:', e.message);
       res.status(500).json({ error: 'Steam search failed', details: e.message });
-    }
-  });
-
-  app.post('/api/proxy/game-summary/summarize', async (req, res) => {
-    try {
-      const upstream = await fetch(GAME_SUMMARY_SUMMARIZE_URL, {
-        method: 'POST',
-        headers: {
-          Accept: 'text/event-stream, application/json, text/plain;q=0.9',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(req.body ?? {}),
-      });
-
-      res.status(upstream.status);
-      const contentType = upstream.headers.get('content-type');
-      if (contentType) res.setHeader('Content-Type', contentType);
-      res.setHeader('Cache-Control', 'no-store');
-
-      if (!upstream.body) {
-        return res.send(await upstream.text());
-      }
-
-      const reader = upstream.body.getReader();
-      res.flushHeaders();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        res.write(Buffer.from(value));
-      }
-      res.end();
-    } catch (error: any) {
-      if (res.headersSent) {
-        res.end();
-        return;
-      }
-      res.status(502).json({ error: 'Falha ao gerar o resumo.', details: error?.message });
     }
   });
 

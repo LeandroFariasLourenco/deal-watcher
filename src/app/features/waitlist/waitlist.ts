@@ -8,7 +8,6 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { WaitlistService } from '../../services/waitlist';
 import { ItadAuthService } from '../../services/itad-auth';
-import { EmailService } from '../../services/email';
 import { ItadWebhookService } from '../../services/itad-webhook';
 import { ItadNotificationsService } from '../../services/itad-notifications';
 import { OwnedGamesService } from '../../services/owned-games';
@@ -32,7 +31,6 @@ registerSwiper();
 export class Waitlist {
   readonly waitlist = inject(WaitlistService);
   readonly auth = inject(ItadAuthService);
-  readonly email = inject(EmailService);
   readonly webhook = inject(ItadWebhookService);
   readonly notifications = inject(ItadNotificationsService);
   readonly owned = inject(OwnedGamesService);
@@ -109,26 +107,6 @@ export class Waitlist {
         severity: 'error',
         summary: 'Notificações',
         detail: 'Não foi possível atualizar as notificações. Tente novamente.',
-        life: 5000,
-      });
-    }
-  }
-
-  async sendEmails() {
-    try {
-      await this.email.triggerSend();
-      this.messageService.add({
-        severity: 'success',
-        summary: 'E-mail',
-        detail: 'Disparo de e-mails solicitado com sucesso.',
-        life: 4000,
-      });
-    } catch (e) {
-      console.error('Failed to trigger email worker', e);
-      this.messageService.add({
-        severity: 'error',
-        summary: 'E-mail',
-        detail: 'Não foi possível disparar os e-mails. Tente novamente.',
         life: 5000,
       });
     }
