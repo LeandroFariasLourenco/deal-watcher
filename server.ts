@@ -246,6 +246,30 @@ async function startServer() {
     }
   });
 
+  if (!isProd) {
+    const devServiceWorkerReset = `
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((key) => caches.delete(key)));
+    await self.registration.unregister();
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    await Promise.all(clients.map((client) => client.navigate(client.url)));
+  })());
+});
+`;
+    app.get(['/dev-sw.js', '/sw.js'], (_req, res) => {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('Service-Worker-Allowed', '/');
+      res.send(devServiceWorkerReset);
+    });
+  }
+
   const vite = !isProd ? await createViteServer({
     server: { middlewareMode: true },
     appType: 'spa',

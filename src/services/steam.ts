@@ -93,6 +93,53 @@ export function steamNewsCacheKey(appId: number): string {
   return `news:${appId}:${STEAM_NEWS_FEEDS}:${STEAM_NEWS_COUNT}`;
 }
 
+export const STEAM_DLC_PAGE_SIZE = 12;
+
+export interface SteamDlcItem {
+  appid: number;
+  name: string;
+  type: string;
+  header_image: string;
+  url: string;
+}
+
+export interface SteamDlcPage {
+  appid: number;
+  total: number;
+  offset: number;
+  limit: number;
+  items: SteamDlcItem[];
+}
+
+export function steamDlcCacheKey(appId: number, offset: number, limit: number): string {
+  return `dlc:${appId}:pt:BR:${offset}:${limit}`;
+}
+
+function mapSteamDlcItem(item: any): SteamDlcItem | null {
+  const appid = Number(item?.appid);
+  const name = typeof item?.name === 'string' ? item.name.trim() : '';
+  if (!Number.isInteger(appid) || appid <= 0 || !name) return null;
+  const url = typeof item?.url === 'string' ? item.url.trim() : '';
+  return {
+    appid,
+    name,
+    type: typeof item?.type === 'string' ? item.type : '',
+    header_image: typeof item?.header_image === 'string' ? item.header_image : '',
+    url: url || `https://store.steampowered.com/app/${appid}`,
+  };
+}
+
+export function mapSteamDlcPage(appId: number, offset: number, limit: number, payload: any): SteamDlcPage {
+  const items = Array.isArray(payload?.items) ? payload.items.map(mapSteamDlcItem).filter((item: SteamDlcItem | null): item is SteamDlcItem => item !== null) : [];
+  return {
+    appid: Number(payload?.appid) || appId,
+    total: Number(payload?.total) || 0,
+    offset: Number.isInteger(Number(payload?.offset)) ? Number(payload.offset) : offset,
+    limit: Number(payload?.limit) || limit,
+    items,
+  };
+}
+
 function decodeHtmlEntities(value: string): string {
   return value
     .replace(/&nbsp;/gi, ' ')
@@ -207,6 +254,22 @@ export class SteamService {
       return [];
     } catch (error) {
       console.error('Steam News Error:', error);
+      throw error;
+    }
+  }
+
+  async getAppDlcs(appId: number, offset = 0, limit = STEAM_DLC_PAGE_SIZE): Promise<SteamDlcPage> {
+    const pageOffset = Math.max(0, offset);
+    const pageLimit = Math.min(24, Math.max(1, limit));
+    const cacheKey = steamDlcCacheKey(appId, pageOffset, pageLimit);
+    try {
+      return await cacheFirst(COLLECTIONS.STEAM, cacheKey, CACHE_TTL.STEAM_DLC, async () => {
+        const url = `${STEAM_API_BASE}/dlc?appid=${appId}&offset=${pageOffset}&limit=${pageLimit}`;
+        const response = await axios.get(url, { timeout: 30000 });
+        return mapSteamDlcPage(appId, pageOffset, pageLimit, response.data);
+      });
+    } catch (error) {
+      console.error('Steam DLC Error:', error);
       throw error;
     }
   }

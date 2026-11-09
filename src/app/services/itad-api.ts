@@ -73,4 +73,8 @@ export class ItadApiService {
   getSteamNews(appId: number) {
     return from(this.steam.getAppNews(appId));
   }
+
+  getSteamDlcs(appId: number, offset = 0, limit = 12) {
+    return from(this.steam.getAppDlcs(appId, offset, limit));
+  }
 }

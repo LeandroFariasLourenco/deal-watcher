@@ -18,7 +18,7 @@ import { ShopSwiper, ShopSwiperItem } from '../../shared/shop-swiper/shop-swiper
 import { ImgShimmerDirective } from '../../shared/img-shimmer';
 import { DeferLoadDirective } from '../../shared/defer-load';
 import { ITADGameBundle, ITADGamePrices, ITADGameSub } from '../../../types/itad';
-import { SteamAppReview, SteamNewsItem, SteamReviewSummary, SteamReviewType, SteamReviewTypeValue } from '../../../services/steam';
+import { STEAM_DLC_PAGE_SIZE, SteamAppReview, SteamDlcItem, SteamNewsItem, SteamReviewSummary, SteamReviewType, SteamReviewTypeValue } from '../../../services/steam';
 import { WaitlistService } from '../../services/waitlist';
 import { OwnedGamesService } from '../../services/owned-games';
 import { RestoreWaitlistPrompt } from '../../shared/restore-waitlist-dialog/restore-waitlist-dialog';
@@ -89,6 +89,13 @@ export class Details implements OnInit {
   steamReviewType = signal<SteamReviewTypeValue>(SteamReviewType.All);
   steamReviewsOpened = signal(false);
   steamNews = signal<SteamNewsItem[]>([]);
+  steamDlcs = signal<SteamDlcItem[]>([]);
+  steamDlcTotal = signal(0);
+  steamDlcNextOffset = signal(0);
+  steamDlcsOpened = signal(false);
+  loadingSteamDlcs = signal(false);
+  loadingMoreSteamDlcs = signal(false);
+  steamDlcsHasMore = computed(() => this.steamDlcNextOffset() < this.steamDlcTotal());
   readonly steamReviewTypeOptions: Array<{ value: SteamReviewTypeValue; label: string }> = [
     { value: SteamReviewType.All, label: 'Todas' },
     { value: SteamReviewType.Positive, label: 'Positivas' },
@@ -202,6 +209,12 @@ export class Details implements OnInit {
     this.steamReviewType.set(SteamReviewType.All);
     this.steamReviewsOpened.set(false);
     this.steamNews.set([]);
+    this.steamDlcs.set([]);
+    this.steamDlcTotal.set(0);
+    this.steamDlcNextOffset.set(0);
+    this.steamDlcsOpened.set(false);
+    this.loadingSteamDlcs.set(false);
+    this.loadingMoreSteamDlcs.set(false);
     this.historyShops.set([]);
     this.selectedHistoryShop.set(null);
     this.chartData.set(null);
@@ -215,6 +228,17 @@ export class Details implements OnInit {
     this.loadingBundles.set(true);
     this.loadingSteamReviews.set(false);
     this.loadingSteamNews.set(false);
+  }
+
+  revealDlcs() {
+    if (!this.uuid() || this.steamDlcsOpened() || this.loadingSteamDlcs()) return;
+    this.steamDlcsOpened.set(true);
+    this.loadSteamDlcs(false);
+  }
+
+  loadMoreSteamDlcs() {
+    if (!this.steamDlcsHasMore() || this.loadingSteamDlcs() || this.loadingMoreSteamDlcs()) return;
+    this.loadSteamDlcs(true);
   }
 
   reveal(section: 'prices' | 'subs' | 'bundles' | 'history' | 'reviews' | 'news') {
@@ -480,6 +504,47 @@ export class Details implements OnInit {
         this.historyShops.set([]);
         this.selectedHistoryShop.set(null);
         this.chartData.set(null);
+      }
+    });
+  }
+
+  loadSteamDlcs(more: boolean) {
+    const appId = this.steamAppId();
+    const offset = more ? this.steamDlcNextOffset() : 0;
+    if (!appId) {
+      if (!this.gameInfo()) return;
+      this.steamDlcs.set([]);
+      this.steamDlcTotal.set(0);
+      this.steamDlcNextOffset.set(0);
+      this.loadingSteamDlcs.set(false);
+      this.loadingMoreSteamDlcs.set(false);
+      return;
+    }
+
+    if (more) this.loadingMoreSteamDlcs.set(true);
+    else this.loadingSteamDlcs.set(true);
+
+    this.itadApi.getSteamDlcs(appId, offset, STEAM_DLC_PAGE_SIZE).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (page) => {
+        if (this.steamAppId() !== appId) return;
+        const items = Array.isArray(page?.items) ? page.items : [];
+        this.steamDlcs.update(current => more ? [...current, ...items] : items);
+        this.steamDlcTotal.set(Number(page?.total) || 0);
+        const pageOffset = Number.isInteger(Number(page?.offset)) ? Number(page.offset) : offset;
+        const pageLimit = Number(page?.limit) || STEAM_DLC_PAGE_SIZE;
+        this.steamDlcNextOffset.set(pageOffset + pageLimit);
+        this.loadingSteamDlcs.set(false);
+        this.loadingMoreSteamDlcs.set(false);
+      },
+      error: () => {
+        if (this.steamAppId() !== appId) return;
+        if (!more) {
+          this.steamDlcs.set([]);
+          this.steamDlcTotal.set(0);
+          this.steamDlcNextOffset.set(0);
+        }
+        this.loadingSteamDlcs.set(false);
+        this.loadingMoreSteamDlcs.set(false);
       }
     });
   }
@@ -756,6 +821,10 @@ export class Details implements OnInit {
     if (f === 'S') return 'Menor Preço na Loja';
     if (f === 'N') return 'Nova Oferta';
     return flag;
+  }
+
+  steamContentUrl(appId: number): string {
+    return `https://store.steampowered.com/app/${appId}`;
   }
 
   formatGameType(type: string | null | undefined): string {

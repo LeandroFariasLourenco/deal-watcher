@@ -1,0 +1,8 @@
+name = "deal-watcher"
+main = "src/index.js"
+compatibility_date = "2026-11-09"
+workers_dev = true
+
+# Segredos, gravados na conta e fora do git:
+# npx wrangler secret put ITAD_API_KEY
+# npx wrangler secret put ITAD_CLIENT_SECRET
